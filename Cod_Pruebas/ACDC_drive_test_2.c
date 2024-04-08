@@ -528,8 +528,6 @@ ii = 0;
 //---------Controlador-de-inversor----------//
     contador_l = 0;
     contador_g = 0;
-//    frec_vf = 100.0;
-//    voltaje_vf = 300.0;
     frec_vf = f_min_vf;
     voltaje_vf = v_min_vf;
     contador_frecuencia = 0.0;
