@@ -597,12 +597,7 @@ ii = 0;
 //            //
 //            DELAY_US(1000*500);
 
-//sadasdsa
-//asdasdasd2
-//asdasd 3
-//asdasdasd ads asd
-
-
+            //asdasdasd
 //---- maquina de estados con 1 boton-----///
         switch (estado)
         {
