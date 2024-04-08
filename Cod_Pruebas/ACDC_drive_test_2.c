@@ -539,10 +539,6 @@ ii = 0;
 
     contador_apagado = 0;
     contador_apagado2 = 0;
-//    (f_max_vf-t_final_rampa*Fpwm_vf*aaa);
-//
-//    aaa = (f_max_vf - f_min_vf) / (500-300);
-//    c = (50.0-5.0)/(2500.0*(0.2-0.12));
 
 //------------------------------------------//
 //
