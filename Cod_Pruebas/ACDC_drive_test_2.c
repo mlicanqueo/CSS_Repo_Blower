@@ -598,8 +598,6 @@ ii = 0;
 //            DELAY_US(1000*500);
 
 
-//            EPwm3Regs.AQCTLA.bit.PRD = AQ_CLEAR;
-//            EPwm3Regs.AQCTLA.bit.CAD = AQ_SET;
 
 
 //---- maquina de estados con 1 boton-----///
