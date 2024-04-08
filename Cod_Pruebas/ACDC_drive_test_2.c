@@ -567,25 +567,6 @@ ii = 0;
             GPIO_WritePin(34, 0);
         }
 
-        //
-        // Turn on LED
-        //
-//        GPIO_WritePin(31, 1);
-//        GPIO_WritePin(34, 0);
-        //
-        // Delay for a bit.
-        //
-//        DELAY_US(1000*500);
-        //
-        // Turn off LED
-        //
-//        GPIO_WritePin(31, 0);
-//        GPIO_WritePin(34, 1);
-        //
-        // Delay for a bit.
-        //
-//        DELAY_US(1000*500);
-
 //{
 
     //        GPIO_WritePin(sw1_output, 1); // encendido del pin
