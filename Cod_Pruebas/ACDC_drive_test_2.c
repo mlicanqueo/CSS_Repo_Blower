@@ -600,6 +600,7 @@ ii = 0;
 //sadasdsa
 //asdasdasd2
 //asdasd 3
+//asdasdasd ads asd
 
 
 //---- maquina de estados con 1 boton-----///
