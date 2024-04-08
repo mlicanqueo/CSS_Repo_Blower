@@ -1,0 +1,1245 @@
+/*
+ * task.cla
+ *
+ *  Created on: 06-07-2020
+ *      Author: Matias_L
+ */
+//
+// Included Files
+//
+#include "task_file.h"
+#include <stdint.h>
+#include <CLAmath.h>
+//
+//Task 1
+__interrupt void Cla1Task3 (void) // Fault mode
+{
+////------------Lectura-de-variables-----------//
+//    float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c, i_out;
+    float vdc, v_in;
+    float il[3];
+//
+    vdc  = ((float)(AdcaResultRegs.ADCRESULT0)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+    v_in = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   - n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
+//    vg_b = ((float)(AdcaResultRegs.ADCRESULT2)*m_vg   - n_vg);   // Curva para ADC-A2, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO11
+//    vg_c = ((float)(AdcaResultRegs.ADCRESULT3)*m_vg   - n_vg);   // Curva para ADC-A3, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO9
+    il[0] = ((float)(AdcaResultRegs.ADCRESULT2)*m_i   - n_i);   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    il[1] = ((float)(AdcaResultRegs.ADCRESULT3)*m_i   - n_i);   // Curva para ADC-A3, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    il[2] = ((float)(AdcaResultRegs.ADCRESULT4)*m_i   - n_i);   // Curva para ADC-A4, Voltaje entre  -abc a bc, de 0 a 3.3V |
+//    i_out= ((float)(AdcbResultRegs.ADCRESULT8)*m_iout - n_iout); // Curva para ADC-B2, Voltaje entre   0-15V,    de 0 a 3.3V | RTBox Pin AO10
+
+//-------------------------------------------//
+//-------------------------------------------//
+//---------------PRUEBAS---------------------//
+
+//    float cuentas_adc;
+//    cuentas_adc = (float)(AdcaResultRegs.ADCRESULT2);
+//    __mdebugstop();
+//    if (cuentas_adc >= 2000)
+//    {
+//        resultado = 1;
+//    }
+//    else
+//        resultado = 0;
+//
+//    PWM_CMPA_mod = (((int16)(AdcaResultRegs.ADCRESULT2)*625.0/(4096.0)));
+
+//-------------------------------------------//
+//-------------------------------------------//
+//-------------------------------------------//
+
+//---------Controlador-de-voltaje------------//
+//    float frecuencia, amplitud;
+//    if (i_count_l == 0)
+//    {
+//
+//        frecuencia = 0;
+//
+//
+//
+//
+//
+//    }
+    float err_v, u_v, i_ref;
+
+
+    if (i_count_l == 0)
+    {
+        err_v = vdc - vdc_ref;
+
+            u_v     = KNO_v*(err_v - x_v_l);
+                if (u_v > MAX_ACT_v)
+                {
+                u_v = MAX_ACT_v;
+                }
+            else if (u_v < MIN_ACT_v)
+                {
+            u_v = MIN_ACT_v;
+                }
+            x_v_g     = PIAWU_N1_v*u_v + PIAWU_D1_v*x_ant_v_l;
+            i_ref = u_v;
+    }
+//-------------------------------------------//
+//---------Controlador-de-corriente-d--------//
+    float u_id[3], err_i [3];
+
+    err_i[i_count_l] = i_ref - il[i_count_l];
+
+    u_id[i_count_l] = KN0_i*(err_i[i_count_l] - x_i_l[i_count_l]);
+
+    if (u_id[i_count_l] > MAX_ACT_i)
+        {
+         u_id[i_count_l] = MAX_ACT_i;
+        }
+    else if (u_id[i_count_l] < MIN_ACT_i)
+         {
+          u_id[i_count_l] = MIN_ACT_i;
+         }
+
+    x_i_g[i_count_l]     = PIAWU_N1_i*u_id[i_count_l] + PIAWU_D1_i*x_ant_i_l[i_count_l];
+
+    i_count_g = i_count_l;
+//    __mdebugstop();
+
+//-------------------------------------------//
+}
+
+__interrupt void Cla1Task2 (void) // Sync_PLL
+{
+
+//    float k = 0;
+//    float bab = 0;
+//
+//    for(k = 1; k < 2; ++k)
+//    {
+//        bab = bab + 1;
+//    }
+//////------------Lectura-de-variables-----------//
+////    float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c, i_out;
+////    float vdc, v_in;
+//    float il[3];
+//////
+////    vdc  = ((float)(AdcaResultRegs.ADCRESULT0)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+////    v_in = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//////    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   - n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
+//////    vg_b = ((float)(AdcaResultRegs.ADCRESULT2)*m_vg   - n_vg);   // Curva para ADC-A2, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO11
+//////    vg_c = ((float)(AdcaResultRegs.ADCRESULT3)*m_vg   - n_vg);   // Curva para ADC-A3, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO9
+//    il[0] = ((float)(AdcaResultRegs.ADCRESULT2)*m_i   - n_i);   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
+//    il[1] = ((float)(AdcaResultRegs.ADCRESULT3)*m_i   - n_i);   // Curva para ADC-A3, Voltaje entre  -abc a abc, de 0 a 3.3V |
+//    il[2] = ((float)(AdcaResultRegs.ADCRESULT4)*m_i   - n_i);   // Curva para ADC-A4, Voltaje entre  -abc a bc, de 0 a 3.3V |
+//////    i_out= ((float)(AdcbResultRegs.ADCRESULT8)*m_iout - n_iout); // Curva para ADC-B2, Voltaje entre   0-15V,    de 0 a 3.3V | RTBox Pin AO10
+//
+////-------------------------------------------//
+////-------------------------------------------//
+////-------------------------------------------//
+//
+//
+//
+//
+////---------Controlador-de-voltaje------------//
+//
+////-------------------------------------------//
+////---------Controlador-de-corriente-d--------//
+//    double Imax[3], Ik_ref[3], Dk[3], Xk[3], Imax_ref[3], Imax_corregido[3];
+//    int N = 1;
+//
+////    double V_low, V_high, Iavg_ref, Von, Voff, numerador, denominador, raiz_arg, Idc_inv_est, D_dcm, D_ccm, D_off_dcm;
+//    double Iavg_ref, Von, Voff, numerador, denominador, raiz_arg, Idc_inv_est, D_dcm, D_ccm, D_off_dcm;
+//    float aux_1;
+//    ////////////////////////////////////////
+//    // Variables intermedias
+//    ////////////////////////////////////////
+//    double E;
+//    double F;
+//    double G;
+//    double Z;
+//
+//    double R;
+//    double S;
+//    double T;
+//
+//    double a;
+//    double b;
+//    double delta;
+//    double a0;
+//    double a2;
+//    double a3;
+//    double Vss;
+//    double Imax_ref_ccm;
+//    double Imax_ref_dcm;
+//    double Imax_bound;
+//
+//    ////////////////////////////////////////////////////
+//    Imax[0] = 1;
+//    Imax[1] = 2;
+//    Imax[2] = 3;
+//
+//    Ik_ref[0] = 1;
+//    Ik_ref[1] = 2;
+//    Ik_ref[2] = 3;
+//
+//    Dk[0] = 1;
+//    Dk[1] = 2;
+//    Dk[2] = 3;
+//
+//    Xk[0] = 1;
+//    Xk[1] = 2;
+//    Xk[2] = 3;
+//    Imax_ref[2] = 1;
+//    Imax_corregido[2] = 1;
+//    numerador = 1;
+//    denominador= 1;
+//    raiz_arg= 1;
+//    Idc_inv_est= 1;
+//
+//    D_dcm= 1;
+//    D_ccm= 1;
+//    D_off_dcm= 1;
+//
+//    ////////////////////////////////////////////////////
+//
+//    long double G2;
+//    Von = V_low;
+//    Voff = V_low - V_high;
+//    Vss = Von*Voff / ( Voff - Von);
+//    ////////////////////////////////////////////////////
+//    // Conversión de corriente promedio estacionaria
+//    // de referencia a corriente máxima
+//    ////////////////////////////////////////////////////
+//    Idc_inv_est = 10;
+//    // Prealimentación
+//    Iavg_ref = Ik_ref[N]*V_high/V_low + Idc_inv_est/3;
+//    Iavg_ref = (Iavg_ref > 0)? Iavg_ref: 0;
+//    Iavg_ref = 100;
+//    ////////////////////////////////////////////////////
+//    // Conversión de corriente promedio estacionaria
+//    // de referencia a corriente máxima
+//    ////////////////////////////////////////////////////
+//
+//    // Cálculo de referencia de corriente CCM
+//    a0 = alpha * Tpwm_dcdc * Vss * ((4.0/3.0) * alpha * Tpwm_dcdc * Vss - (3.0/2.0) * (L0 - alpha * Iavg_ref)*(L0 - alpha * Iavg_ref));
+//    a2 = 2*alpha*Tpwm_dcdc*Vss;
+//    a3 = alpha * Iavg_ref - L0;
+//    E = (1/3.0) * (-12*a0 - a2*a2);
+//    F = (1/27.0) * (-2*a2*a2*a2 + 72*a2*a0-27*a3*a3*a0);
+//    G = F*F/4.0 + E*E*E/27.0;
+//    G2 = F*F/4.0 + E*E*E/27.0;
+////    Z = pow(CLAsqrt(G)-F/2,1/3.0)-pow(CLAsqrt(G)+F/2.0,1/3.0)+a2/3.0;
+//    aux_1 = a3*a3/4 - a2 + Z;
+//    R = CLAsqrt(aux_1);
+//    S = 3*a3*a3/4 - R*R - 2*a2;
+//    T = (4*a3*a2 - a3*a3*a3) / (4*R);
+//
+//
+//    resultado [0] = a0;
+//    resultado [1] = a2;
+//    resultado [2] = a3;
+//    resultado [3] = E;
+//    resultado [4] = F;
+//    resultado [5] = G;
+//    resultado [6] = Z;
+//    resultado [7] = R;
+//    resultado [8] = S;
+//    resultado [9] = T;
+//
+//    resultado2 = CLAexp((1/3)*CLAln(CLAsqrt(G)-F/2));
+//
+//    resultado [10] = CLAsqrt(G);
+//    resultado [11] = CLAsqrt(G2);
+//    resultado [12] = CLAln(CLAsqrt(G)-F/2);
+//    resultado [13] = (1/3)*CLAln(CLAsqrt(G)-F/2);
+//    resultado [14] = CLAexp(resultado[2]);
+//
+//    resultado3 = CLAsqrt(G2);
+
+//-------------------------------------------//
+}
+
+__interrupt void Cla1Task1 (void)
+{
+////------------Lectura-de-variables-----------//
+//    float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c, i_out;
+//    float vdc, v_in;
+    float Imax[3], V_low, V_high;
+////
+    V_high = ((float)(AdcaResultRegs.ADCRESULT0)*m_vdc  + n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+    V_low = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc  + n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+////    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   + n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
+////    vg_b = ((float)(AdcaResultRegs.ADCRESULT2)*m_vg   + n_vg);   // Curva para ADC-A2, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO11
+////    vg_c = ((float)(AdcaResultRegs.ADCRESULT3)*m_vg   + n_vg);   // Curva para ADC-A3, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO9
+    Imax[0] = ((float)(AdcaResultRegs.ADCRESULT2)*m_i   + n_i);   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    Imax[1] = ((float)(AdcaResultRegs.ADCRESULT3)*m_i   + n_i);   // Curva para ADC-A3, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    Imax[2] = ((float)(AdcaResultRegs.ADCRESULT4)*m_i   + n_i);   // Curva para ADC-A4, Voltaje entre  -abc a bc, de 0 a 3.3V |
+////    i_out= ((float)(AdcbResultRegs.ADCRESULT8)*m_iout - n_iout); // Curva para ADC-B2, Voltaje entre   0-15V,    de 0 a 3.3V | RTBox Pin AO10
+
+    Imax[0] = Imax[0]/10; // prueba en lab, se divide por 10 ya que
+
+    float frecuencia, amplitud;
+    double err_v, u_v, i_ref;
+    double Idc_inv_est;     // Corriente que sale desde el controlador V/F
+    double Voff, Von, Vss;
+    double Iavg_max_dcm, Iavg_max_ccm, Iavg_ref, Iavg_ref_dcm, Iavg_ref_ccm;
+    double Imax_ref_ccm_newton;
+    double x_newton;
+    double x1;
+    double x2;
+    double x3;
+    double x4;
+    double x_newton_1;
+    float k = 0;
+    double a0;
+    double a2;
+    double a3;
+    double a, b, delta, Imax_ref_dcm;
+    double D_dcm, D_off_dcm, D_ccm;
+    double Imax_bound;
+
+
+
+//-------------------------------------------//
+//-------------------------------------------//
+//-------------------------------------------//
+//---------Controlador-de-voltaje------------//
+    frecuencia = 0;
+    amplitud = 1;
+
+    Idc_inv_est = 0;
+
+//    V_high = 500;
+//    V_low  = 350;
+//    i_ref  = 100;
+//    Imax[i_count_l] = 80;
+
+if (V_low < 50)
+{
+    i_ref = 0;
+}
+else
+{
+    if (i_count_l == 0)
+        {
+        Idc_inv_est = (Idc_inv_est > IMAX_est)? IMAX_est: (Idc_inv_est < 0)? 0: Idc_inv_est;
+        Idc_inv_est = 0.8*Idc_inv_est;
+
+            err_v = vdc_ref - V_high;
+
+                u_v     = KNO_v*(err_v - x_v_l);
+                    if (u_v > MAX_ACT_v - Idc_inv_est)
+                    {
+                    u_v = MAX_ACT_v - Idc_inv_est;
+                    }
+                else if (u_v < MIN_ACT_v - Idc_inv_est)
+                    {
+                u_v = MIN_ACT_v - Idc_inv_est;
+                    }
+                x_v_g     = PIAWU_N1_v*u_v + PIAWU_D1_v*x_ant_v_l;
+                i_ref = (u_v + Idc_inv_est)/3;
+        }
+}
+//---------Controlador-de-voltaje------------//
+//---------Controlador-de-corriente----------//
+
+//    i_ref = 100;
+
+
+    double Ik_ref[3], Dk[3], Imax_ref[3], Imax_corregido[3];
+    Ik_ref[i_count_l] = i_ref;
+
+    if(V_low < 50)
+    {
+    Dk[i_count_l] = 0;
+    }
+    else{
+
+////////////////////////////////////////////////////
+// Calculo de parámetros
+////////////////////////////////////////////////////
+    V_high = (V_high < V_low)? V_low+10: V_high;
+    Von = V_low;
+    Voff = V_low - V_high;
+    Vss = Von*Voff / ( Voff - Von);
+////////////////////////////////////////////////////
+// Cálculo corrientes máxima por límite de modelos
+////////////////////////////////////////////////////
+    Iavg_max_dcm = 0.99*(L0*L0*L0 / (6*Tpwm_dcdc*Vss*alpha*alpha));
+    Iavg_max_ccm = 0.99*(L0/alpha - (2.0/3.0)*CLAsqrt(2*Tpwm_dcdc*Vss/alpha)); // Esta restricción sale del límite identificado en la tesis
+//    // Prealimentación
+    Iavg_ref = Ik_ref[i_count_l]*V_high/V_low;
+    Iavg_ref = (Iavg_ref > 0)? Iavg_ref: 0;
+//
+
+    Iavg_ref_dcm = (Iavg_ref > Iavg_max_dcm)? Iavg_max_dcm: Iavg_ref;
+    Iavg_ref_ccm = (Iavg_ref > Iavg_max_ccm)? Iavg_max_ccm: Iavg_ref;
+////////////////////////////////////////////////////
+// Conversión de corriente promedio estacionaria
+// de referencia a corriente máxima
+////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////
+// Cálculo de referencia de corriente CCM con Newton raphson
+
+    // Variables Newton Raphson
+    Imax_ref_ccm_newton = Iavg_ref_ccm;
+    x_newton = L0 - alpha * Imax_ref_ccm_newton;
+    x_newton_1 = x_newton;
+
+    a0 = alpha * Tpwm_dcdc * Vss * ((4.0/3.0) * alpha * Tpwm_dcdc * Vss - (3.0/2.0) * (L0 - alpha * Iavg_ref_ccm)*(L0 - alpha * Iavg_ref_ccm));
+    a2 = 2*alpha*Tpwm_dcdc*Vss;
+    a3 = alpha * Iavg_ref_ccm - L0;
+
+//    for(k = 1; k < 50; ++k) {
+    for(k = 1; k < 50; ++k) {
+        x1 = x_newton;
+        x2 = x1*x_newton;
+        x3 = x2*x_newton;
+        x4 = x3*x_newton;
+        x_newton = x_newton - (x4 + a3*x3 + a2*x2 + a0)/ (4*x3 + 3*a3*x2 + 2*a2*x1);
+        if( fabs(x_newton - x_newton_1)/x_newton_1 < 0.01) {
+            break;
+        }
+        x_newton_1 = x_newton;
+    }
+    Imax_ref_ccm_newton = (L0-x_newton)/alpha;
+////////////////////////////////////////////////////
+// Cálculo referencia de corriente DCM
+////////////////////////////////////////////////////
+    a = 3.0*L0 / (2.0*alpha);
+    b = 3.0*Tpwm_dcdc*Vss*Iavg_ref_dcm / alpha;
+    delta = (2*a*a*a - 27*b) / (2*a*a*a);
+    Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin(delta) / 3.0));
+
+    resultado3 = CLAsin(1);
+    resultado2 = CLAasin(0.5);
+    resultado2 = a0;
+
+
+////////////////////////////////////////////////////
+// Calculo corriente máxima de frontera
+////////////////////////////////////////////////////
+    Imax_bound = L0 - CLAsqrt( L0*L0 - 2*alpha*Tpwm_dcdc*Voff*Von / (Voff-Von));
+    Imax_bound = Imax_bound / alpha;
+////////////////////////////////////////////////////
+// Comparación de corriente con frontera
+////////////////////////////////////////////////////
+    if(Imax_ref_dcm > Imax_bound) {
+        Imax_ref[i_count_l] = Imax_ref_ccm_newton;
+        Iavg_ref = Iavg_ref_ccm;
+    }
+    else {
+        Imax_ref[i_count_l] = Imax_ref_dcm;
+        Iavg_ref = Iavg_ref_dcm;
+    }
+////////////////////////////////////////
+// Corrección y limitación de corriente máxima
+////////////////////////////////////////
+    // double Xk[3];
+    //Imax_corregido[i_count_l] = KN0_boost * (Imax_ref_DCM[i_count_l] - Imax[i_count_l] - Xk[i_count_l]);
+    //Imax_corregido[i_count_l] = ( Imax_corregido[i_count_l] > IMAX ) ? IMAX : (Imax_corregido[i_count_l] < IMIN ) ? IMIN : Imax_corregido[i_count_l];
+    //Xk[i_count_l] = KD * Imax_corregido[i_count_l] + KX * Xk[i_count_l];
+    Imax_corregido[i_count_l] = Imax_ref[i_count_l];
+    Imax_corregido[i_count_l] = (Imax_corregido[i_count_l] > IMAX)? IMAX: (Imax_corregido[i_count_l] < 0)? 0: Imax_corregido[i_count_l];
+////////////////////////////////////////
+// Control de corriente máximo
+////////////////////////////////////////
+////////////////////////////////////////
+// Calculo ciclo de trabajo Ddcm
+////////////////////////////////////////
+    D_dcm = 2.0*Imax_corregido[i_count_l] *L0 - alpha * Imax_corregido[i_count_l]*Imax_corregido[i_count_l];
+    D_dcm = D_dcm / (2.0*Von * Tpwm_dcdc);
+////////////////////////////////////////
+// Calculo de ciclo de apagado asumiendo Ddcm
+////////////////////////////////////////
+    D_off_dcm = alpha * Imax[i_count_l]*Imax[i_count_l] - 2.0*Imax[i_count_l] *L0;
+    D_off_dcm = D_off_dcm/(2.0*Voff*Tpwm_dcdc);
+////////////////////////////////////////
+// Calculo ciclo de trabajo Dccm
+////////////////////////////////////////
+    D_ccm = (Imax_corregido[i_count_l] - Imax[i_count_l]) * (alpha * (Imax_corregido[i_count_l] + Imax[i_count_l]) - 2.0*L0) + 2*Tpwm_dcdc*Voff;
+    D_ccm = D_ccm / (2.0*Tpwm_dcdc *(Voff - Von));
+////////////////////////////////////////
+// Verificacion condicion de apagado
+////////////////////////////////////////
+    if (D_dcm + D_off_dcm < 1) {
+        Dk[i_count_l] = D_dcm;
+    }
+    else {
+        Dk[i_count_l] = D_ccm;
+    }
+    Dk[i_count_l] = ( Dk[i_count_l] > DMAX ) ? DMAX : (Dk[i_count_l] < DMIN ) ? DMIN : Dk[i_count_l];
+}
+// Asignación salidas
+    x_i_g[i_count_l] = Dk[i_count_l];       // ciclo de trabajo.
+    i_count_g = i_count_l;                  // contador para piernas del
+
+        resultado [0] = Imax[0];
+        resultado [1] = V_low;
+        resultado [2] = V_high;
+//        resultado [0] = (float)(AdcaResultRegs.ADCRESULT0);
+//        resultado [1] = (float)(AdcaResultRegs.ADCRESULT1);
+//        resultado [2] = (float)(AdcaResultRegs.ADCRESULT2);
+//        resultado [3] = Imax_ref_ccm_newton;
+//        resultado [4] = Imax_ref_dcm;
+//        resultado [5] = Imax_bound;
+//        resultado [6] = D_dcm;
+//        resultado [7] = D_off_dcm;
+//        resultado [8] = D_ccm;
+//        resultado [9] = Imax_corregido[i_count_l];
+//        resultado [10] = Imax_ref[i_count_l];
+//        resultado [11] =  2.0*Imax_corregido[i_count_l] *L0 - alpha * Imax_corregido[i_count_l]*Imax_corregido[i_count_l];
+//        resultado [12] = 1/(2.0*Voff*Tpwm_dcdc);
+//        resultado [13] = Voff;
+//        resultado [14] = k;
+
+//        V_high = (V_high < V_low)? V_low+10: V_high;
+//            Von = V_low;
+//            Voff = V_low - V_high;
+//            Vss = Von*Voff / ( Voff - Von);
+//    Output(N) = Dk[i_count_l];
+//    Output(3) = enclavar;
+//    Output(4) = Imax[0];
+//    Output(5) = Imax_corregido[0];
+//    Output(6) = Iavg_ref;
+//    Output(7) = Imax_ref_ccm;
+//    Output(8) = Imax_ref_ccm_newton;
+//    Output(9) = i;
+
+
+
+
+
+
+
+
+//-------------------------------------------//
+
+
+
+
+
+
+    //---------Controlador-de-voltaje------------//
+
+    //-------------------------------------------//
+    //---------Controlador-de-corriente-d--------//
+//        double Imax[3], Ik_ref[3], Dk[3], Xk[3], Imax_ref[3], Imax_corregido[3];
+//        int N = 1;
+
+    //    double V_low, V_high, Iavg_ref, Von, Voff, numerador, denominador, raiz_arg, Idc_inv_est, D_dcm, D_ccm, D_off_dcm;
+//        double Iavg_ref, Von, Voff, numerador, denominador, raiz_arg, Idc_inv_est, D_dcm, D_ccm, D_off_dcm;
+//    float aux_1;
+//        ////////////////////////////////////////
+//        // Variables intermedias
+//        ////////////////////////////////////////
+//        double E;
+//        double F;
+//        double G;
+//        double Z;
+//
+//        double R;
+//        double S;
+//        double T;
+//
+//        double a;
+//        double b;
+//        double delta;
+//        double a0;
+//        double a2;
+//        double a3;
+//        double Vss;
+//        double Imax_ref_ccm;
+//        double Imax_ref_dcm;
+//        double Imax_bound;
+//
+//        ////////////////////////////////////////////////////
+//        Imax[0] = 1;
+//        Imax[1] = 2;
+//        Imax[2] = 3;
+//
+//        Ik_ref[0] = 1;
+//        Ik_ref[1] = 2;
+//        Ik_ref[2] = 3;
+//
+//        Dk[0] = 1;
+//        Dk[1] = 2;
+//        Dk[2] = 3;
+//
+//        Xk[0] = 1;
+//        Xk[1] = 2;
+//        Xk[2] = 3;
+//        Imax_ref[3] = 1;
+//        Imax_corregido[3] = 1;
+//        numerador = 1;
+//        denominador= 1;
+//        raiz_arg= 1;
+//        Idc_inv_est= 1;
+//
+//        D_dcm= 1;
+//        D_ccm= 1;
+//        D_off_dcm= 1;
+//
+//        ////////////////////////////////////////////////////
+//
+//        long double G2;
+//        Von = V_low;
+//        Voff = V_low - V_high;
+//        Vss = Von*Voff / ( Voff - Von);
+//        ////////////////////////////////////////////////////
+//        // Conversión de corriente promedio estacionaria
+//        // de referencia a corriente máxima
+//        ////////////////////////////////////////////////////
+//        Idc_inv_est = 10;
+//        // Prealimentación
+//        Iavg_ref = Ik_ref[N]*V_high/V_low + Idc_inv_est/3;
+//        Iavg_ref = (Iavg_ref > 0)? Iavg_ref: 0;
+//        Iavg_ref = 100;
+//        ////////////////////////////////////////////////////
+//        // Conversión de corriente promedio estacionaria
+//        // de referencia a corriente máxima
+//        ////////////////////////////////////////////////////
+//
+//        // Cálculo de referencia de corriente CCM
+//        a0 = alpha * Tpwm_dcdc * Vss * ((4.0/3.0) * alpha * Tpwm_dcdc * Vss - (3.0/2.0) * (L0 - alpha * Iavg_ref)*(L0 - alpha * Iavg_ref));
+//        a2 = 2*alpha*Tpwm_dcdc*Vss;
+//        a3 = alpha * Iavg_ref - L0;
+//        E = (1/3.0) * (-12*a0 - a2*a2);
+//        F = (1/27.0) * (-2*a2*a2*a2 + 72*a2*a0-27*a3*a3*a0);
+//        G = F*F/4.0 + E*E*E/27.0;
+//        G2 = F*F/4.0 + E*E*E/27.0;
+//    //    Z = pow(CLAsqrt(G)-F/2,1/3.0)-pow(CLAsqrt(G)+F/2.0,1/3.0)+a2/3.0;
+//    //    Z = 0;
+//        aux_1 = a3*a3/4 - a2 + Z;
+//        R = CLAsqrt(aux_1);
+//        S = 3*a3*a3/4 - R*R - 2*a2;
+//        T = (4*a3*a2 - a3*a3*a3) / (4*R);
+//
+//    //    CLAlogN(fVal, N);
+//
+//        resultado [0] = a0;
+//        resultado [1] = a2;
+//        resultado [2] = a3;
+//        resultado [3] = E;
+//        resultado [4] = F;
+//        resultado [5] = G;
+//        resultado [6] = Z;
+//        resultado [7] = R;
+//        resultado [8] = S;
+//        resultado [9] = T;
+//
+//        resultado2 = CLAexp((1/3)*CLAln(CLAsqrt(G)-F/2));
+//
+//        resultado [10] = CLAsqrt(G);
+//        resultado [11] = CLAsqrt(G2);
+//        resultado [12] = CLAln(CLAsqrt(G)-F/2);
+//        resultado [13] = (1/3)*CLAln(CLAsqrt(G)-F/2);
+//        resultado [14] = CLAexp(resultado[2]);
+//
+//        resultado3 = CLAsqrt(G2);
+
+
+    //    resultado2 = CLAexp(3*CLAln(4));
+    //    pow(CLAsqrt(G)-F/2   ,  1/3)
+    //-------------------------------------------//
+
+}
+
+__interrupt void Cla1Task4 (void)
+{
+
+////--------------Control_Inversor-------------//
+
+//Calculo del angulo
+    float amplitud, V_high;
+    float angulo;
+    float v_alfa, v_beta;
+    float va,vb,vc;
+    float v_minmax, v_minmax_min, v_minmax_max;
+    V_high = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc + n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//    V_high = 750;
+
+    contador_g = contador_l;
+
+
+    if (2*pi*frec_vf*contador_g > pi){
+        contador_g = contador_g - 1/frec_vf;
+    }
+
+    angulo = 2*pi*frec_vf*contador_g;
+
+    amplitud = (voltaje_vf > V_high/sqrt_3)? V_high/sqrt_3: voltaje_vf;
+
+    v_alfa = amplitud*CLAcos(angulo);
+    v_beta = amplitud*CLAsin(angulo);
+
+    va = v_alfa;
+    vb = 0.5*(-v_alfa + sqrt_3*v_beta);
+    vc = 0.5*(-v_alfa - sqrt_3*v_beta);
+
+// minmax
+    if (va<vb){
+        if (va<vc){
+            v_minmax_min = va;
+        }
+        else{
+            v_minmax_min = vc;
+        }
+        if (vb>vc){
+            v_minmax_max = vb;
+        }
+        else{
+            v_minmax_max = vc;
+        }
+    }
+    else{
+        if (vb<vc){
+            v_minmax_min = vb;
+        }
+        else{
+            v_minmax_min = vc;
+        }
+        if (va>vc){
+            v_minmax_max = va;
+        }
+        else{
+            v_minmax_max = vc;
+        }
+    }
+
+    v_minmax = 0.5*(v_minmax_min + v_minmax_max);
+
+    duty_va = (va-v_minmax)/(V_high / 2.0);
+    duty_vb = (vb-v_minmax)/(V_high / 2.0);
+    duty_vc = (vc-v_minmax)/(V_high / 2.0);
+
+    duty_va = (duty_va+1.0)/2.0;
+    duty_vb = (duty_vb+1.0)/2.0;
+    duty_vc = (duty_vc+1.0)/2.0;
+
+
+//    resultado[0] = duty_va;
+//    resultado[1] = duty_vb;
+//    resultado[2] = duty_vc;
+//    resultado[3] = (duty_va+1.0)/2.0;
+//    resultado[4] = (duty_vb+1.0)/2.0;
+//    resultado[5] = (duty_vc+1.0)/2.0;
+//    resultado[6] = amplitud;
+//    resultado[7] = duty_va;
+//    resultado[8] = v_minmax;
+//    resultado[9] = 0;
+//    resultado[10] = 0;
+//    resultado[11] = 0;
+//    resultado[12] = 0;
+//    resultado[13] = 0;
+//    resultado[14] = 0;
+//en interrupción;
+//    contador_l = contador_g + 1/Fpwm_vf;
+//    frec_vf = 1;
+
+////-------------------------------------------//
+
+
+
+}
+
+__interrupt void Cla1Task5 (void)
+{
+
+}
+
+__interrupt void Cla1Task6 (void) // Tarea de prueba, utilizara para implementar DDSRF-PLL
+{
+
+    __mdebugstop();
+////------------Lectura-de-variables-----------//
+//    float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c;// i_out;
+//
+//    vdc  = ((float)(AdcaResultRegs.ADCRESULT0)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V | RTBox Pin AO15
+//    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   - n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
+//    vg_b = ((float)(AdcaResultRegs.ADCRESULT2)*m_vg   - n_vg);   // Curva para ADC-A2, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO11
+//    vg_c = ((float)(AdcaResultRegs.ADCRESULT3)*m_vg   - n_vg);   // Curva para ADC-A3, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO9
+//    ig_a = ((float)(AdcaResultRegs.ADCRESULT4)*m_ig   - n_ig);   // Curva para ADC-A4, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO7
+//    ig_b = ((float)(AdcbResultRegs.ADCRESULT6)*m_ig   - n_ig);   // Curva para ADC-B0, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO14
+//    ig_c = ((float)(AdcbResultRegs.ADCRESULT7)*m_ig   - n_ig);   // Curva para ADC-B1, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO12
+////-------------------------------------------//
+////----------transf_abc-a-alfa-beta-----------//
+//    float vg_alfa, vg_beta, ig_alfa, ig_beta;
+//
+//    vg_alfa = dos_div_3*vg_a - uno_div_3*vg_b - uno_div_3*vg_c;
+//    vg_beta = vg_b/raiz_de_3 - vg_c/raiz_de_3;
+//    ig_alfa = dos_div_3*ig_a - uno_div_3*ig_b - uno_div_3*ig_c;
+//    ig_beta = ig_b/raiz_de_3 - ig_c/raiz_de_3;
+////    float lectura, modificacion;
+////
+////    lectura = (float)(AdcaResultRegs.ADCRESULT1);
+////    modificacion = lectura*0.00036634-0.2873;   // Curva para ADC-A1, con Escalón 0-1, de 0.5 a 2.5V
+////    a1 = modificacion;
+////    a2 = u_v;
+//// Variables para leer señales alfa beta mediante Generador de señales
+////    vg_alfa = ((float)(AdcaResultRegs.ADCRESULT1)*0.22786159 - 489.705632); // Curva para ADC-A1, con voltaje alfa +-311, de 0.5 a 2.5V
+////    vg_beta = ((float)(AdcaResultRegs.ADCRESULT2)*0.22796029 - 490.94356);  // Curva para ADC-A2, con voltaje beta +-311, de 0.5 a 2.5V
+//
+//    if (vg_alfa > 311.13)
+//    {
+//        vg_alfa = 311.12;
+//    }
+//    else if (vg_alfa < -311.13)
+//    {
+//        vg_alfa = -311.12;
+//    }
+//    else
+//    {
+//    }
+//
+//    if (vg_beta > 311.13)
+//    {
+//        vg_beta = 311.12;
+//    }
+//    else if (vg_beta < -311.13)
+//    {
+//        vg_beta = -311.12;
+//    }
+//    else
+//    {
+//    }
+//
+////-------------------------------------------//
+////----------alfa-beta-a-dq-mas-menos---------//
+//    float vg_d, vg_q, ig_d, ig_q;
+//    // datos para DDSRF-PLL
+//
+//    float cos_theta_ddsrf, sin_theta_ddsrf, cos_mas_2_theta, sen_mas_2_theta, cos_men_2_theta, sin_men_2_theta;
+//
+//    cos_theta_ddsrf = CLAcos(   theta_ddsrf_l);
+//    sin_theta_ddsrf = CLAsin(   theta_ddsrf_l);
+//    cos_mas_2_theta = CLAcos( 2*theta_ddsrf_l);
+//    sen_mas_2_theta = CLAsin( 2*theta_ddsrf_l);
+//    cos_men_2_theta = CLAcos(-2*theta_ddsrf_l);
+//    sin_men_2_theta = CLAsin(-2*theta_ddsrf_l);
+//
+//
+//    vg_d    =  cos_theta_ddsrf*vg_alfa + sin_theta_ddsrf*vg_beta;
+//    vg_q    = -sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//    ig_d    =  cos_theta_ddsrf*ig_alfa + sin_theta_ddsrf*ig_beta;
+//    ig_q    = -sin_theta_ddsrf*ig_alfa + cos_theta_ddsrf*ig_beta;
+//
+//
+//    float vg_d_men, vg_q_men, vg_d_mas, vg_q_mas, vg_d_men_ref, vg_q_men_ref, vg_d_mas_ref, vg_q_mas_ref;
+//
+//    vg_d_men =  cos_theta_ddsrf*vg_alfa - sin_theta_ddsrf*vg_beta;
+//    vg_q_men =  sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//
+//    vg_d_mas =  cos_theta_ddsrf*vg_alfa + sin_theta_ddsrf*vg_beta;
+//    vg_q_mas = -sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//
+////    float vg_d_men_prom, vg_q_men_prom, vg_d_mas_prom, vg_q_mas_prom;
+//
+////    vg_d_men_prom_l = vg_d_men_prom_g; // las l cpu->cla, las g cla->cpu
+////    vg_q_men_prom_l = vg_q_men_prom_g;
+////    vg_d_mas_prom_l = vg_d_mas_prom_g;
+////    vg_q_mas_prom_l = vg_q_mas_prom_g;
+////
+////    vg_d_men_ref_ant_l = vg_d_men_ref_ant_g;
+////    vg_d_men_prom_ant_l = vg_d_men_prom_ant_g;
+////    vg_q_men_ref_ant_l = vg_q_men_ref_ant_g;
+////    vg_q_men_prom_ant_l = vg_q_men_prom_ant_g;
+////
+////    vg_d_mas_ref_ant_l = vg_d_mas_ref_ant_g;
+////    vg_d_mas_prom_ant_l = vg_d_mas_prom_ant_g;
+////    vg_q_mas_ref_ant_l = vg_q_mas_ref_ant_g;
+////    vg_q_mas_prom_ant_l = vg_q_mas_prom_ant_g;
+////
+////    integr_ddsrf_l = integr_ddsrf_g
+////    integr_ddsrf_ant_l = integr_ddsrf_ant_g;
+////    theta_ddsrf_ant_l = theta_ddsrf_ant_g;
+////    theta_ddsrf_l = theta_ddsrf_g;
+//
+//
+//    vg_d_men_ref = vg_d_men - ( cos_men_2_theta*vg_d_mas_prom_l + sin_men_2_theta*vg_q_mas_prom_l);
+//    vg_q_men_ref = vg_q_men - (-sin_men_2_theta*vg_d_mas_prom_l + cos_men_2_theta*vg_q_mas_prom_l);
+//
+//    vg_d_mas_ref = vg_d_mas - ( cos_mas_2_theta*vg_d_men_prom_l + sen_mas_2_theta*vg_q_men_prom_l);
+//    vg_q_mas_ref = vg_q_mas - (-sen_mas_2_theta*vg_d_men_prom_l + cos_mas_2_theta*vg_q_men_prom_l);
+//
+//    // LPF
+//
+////    float vg_d_men_ref_ant, vg_q_men_ref_ant, vg_d_mas_ref_ant, vg_q_mas_ref_ant;
+////    float vg_d_men_prom_ant, vg_q_men_prom_ant, vg_d_mas_prom_ant, vg_q_mas_prom_ant;
+//
+//    vg_d_men_prom_g = vg_d_men_ref_ant_l*omega_lpf*h_sample + vg_d_men_prom_ant_l*(1-omega_lpf*h_sample);
+//    vg_q_men_prom_g = vg_q_men_ref_ant_l*omega_lpf*h_sample + vg_q_men_prom_ant_l*(1-omega_lpf*h_sample);
+//
+//    vg_d_mas_prom_g = vg_d_mas_ref_ant_l*omega_lpf*h_sample + vg_d_mas_prom_ant_l*(1-omega_lpf*h_sample);
+//    vg_q_mas_prom_g = vg_q_mas_ref_ant_l*omega_lpf*h_sample + vg_q_mas_prom_ant_l*(1-omega_lpf*h_sample);
+//
+//
+//
+//
+////-------------------------------------------//
+////-------------Sincronización_PLL------------//
+//    float actuac, prueba;
+//
+//    float actuac_ddsrf, theta_ddsrf_prueba;
+//
+//    actuac_ddsrf = integr_ddsrf_l*ki_pll + vg_q*kp_pll + 2*pi*f;
+//    integr_ddsrf_g = h_sample*vg_q_mas_ref + integr_ddsrf_ant_l;
+//    theta_ddsrf_prueba  = h_sample*actuac_ddsrf + theta_ddsrf_ant_l;
+//    if (theta_ddsrf_prueba >= lim_up_pll)
+//    {
+//        theta_ddsrf_prueba = theta_ddsrf_prueba - lim_up_pll;   //% theta_g - lim_upp_pll;  %// reinicia el valor de la triangular cuando alcanza 2pi
+//    }
+//    theta_ddsrf_g = theta_ddsrf_prueba;
+//
+////    a1 = vg_alfa;
+////    a2 = vg_beta;
+////    a3 = theta_ddsrf_prueba;
+//    a1 = vg_d_mas;
+//    a2 = vg_q_mas;
+//    a3 = theta_ddsrf_prueba;
+////    a1 = vg_alfa;
+////    a2 = vg_beta;
+////    a3 = prueba;
+////-------------------------------------------//
+//
+//    actuac = integrador_l*ki_pll + vg_q_mas_ref*kp_pll + 2*pi*f;
+//    integrador_g = h_sample*vg_q + integrador_ant_l;  //   integrador
+//    prueba = h_sample*actuac + theta_ant_l;
+//        if (prueba >= lim_up_pll)
+//        {
+//            prueba = prueba - lim_up_pll;            //% theta_g - lim_upp_pll;  %// reinicia el valor de la triangular cuando alcanza 2pi
+//        }
+//    theta_g = prueba;
+//
+////-------------------------------------------//
+////----------Controlador-de-voltaje-----------//
+//    float err_v, u_v, id_ref;
+//
+//    err_v   = vdc_ref*vdc_ref - vdc*vdc;
+//    u_v     = KNO_v*(err_v - x_v_l);
+//        if (u_v > MAX_ACT_v)
+//        {
+//        u_v = MAX_ACT_v;
+//        }
+//    else if (u_v < MIN_ACT_v)
+//        {
+//    u_v = MIN_ACT_v;
+//        }
+//    x_v_g     = PIAWU_N1_v*u_v + PIAWU_D1_v*x_ant_v_l;
+//    id_ref = u_v - kpv1*vdc*vdc;
+//
+////-------------------------------------------//
+////---------Controlador-de-corriente-d--------//
+//    float err_i_d, u_id, v_conv_d;
+//
+//    err_i_d = id_ref - ig_d;
+//    u_id = KN0_i*(err_i_d - x_id_l);
+//    if (u_id > MAX_ACT_i)
+//        {
+//         u_id = MAX_ACT_i;
+//        }
+//    else if (u_id < MIN_ACT_i)
+//         {
+//          u_id = MIN_ACT_i;
+//         }
+//    x_id_g     = PIAWU_N1_i*u_id + PIAWU_D1_i*x_ant_id_l;
+//    v_conv_d = vg_d + ig_q*2*pi*f*L - u_id;
+//
+////-------------------------------------------//
+////---------Controlador-de-corriente-q--------//
+//
+//    float err_i_q, u_iq, v_conv_q;
+//
+//    err_i_q  = iq_ref - ig_q;
+//    u_iq     = KN0_i*(err_i_q - x_iq_l);
+//    if (u_iq > MAX_ACT_i)
+//        {
+//            u_iq = MAX_ACT_i;
+//        }
+//     else if (u_iq < MIN_ACT_i)
+//         {
+//             u_iq = MIN_ACT_i;
+//         }
+//    x_iq_g     = PIAWU_N1_i*u_iq + PIAWU_D1_i*x_ant_iq_l;
+//    v_conv_q = vg_q - ig_d*2*pi*f*L - u_iq;
+//
+////-------------------------------------------//
+////----------actualizacion-variables----------//
+//    x_ant_v_g = x_v_g;                  //controlador de voltaje
+//
+//    x_ant_id_g = x_id_g;                //controlador i_d
+//
+//    x_ant_iq_g = x_iq_g;                //controlador i_q
+////----------Actualizacion_PLL--------------//
+//
+//    vg_d_men_ref_ant_g  = vg_d_men_ref;
+//    vg_d_men_prom_ant_g = vg_d_men_prom_g;
+//
+//    vg_q_men_ref_ant_g  = vg_q_men_ref;
+//    vg_q_men_prom_ant_g = vg_q_men_prom_g;
+//
+//    vg_d_mas_ref_ant_g  = vg_d_mas_ref;
+//    vg_d_mas_prom_ant_g = vg_d_mas_prom_g;
+//
+//    vg_q_mas_ref_ant_g  = vg_q_mas_ref;
+//    vg_q_mas_prom_ant_g = vg_q_mas_prom_g;
+//
+//    // PI del DDSRF-PLL
+//    integr_ddsrf_ant_g = integr_ddsrf_g;
+//    theta_ddsrf_ant_g  = theta_ddsrf_g;
+////-------------------------------------------//
+////-------------------------------------------//
+////--------------dq-a-alpha_beta--------------//
+//    float v_conv_alfa, v_conv_beta;
+//
+//    v_conv_alfa = cos_theta_ddsrf*v_conv_d - sin_theta_ddsrf*v_conv_q;
+//    v_conv_beta = sin_theta_ddsrf*v_conv_d + cos_theta_ddsrf*v_conv_q;
+////-------------------------------------------//
+////--------------alpha_beta-a-abc-------------//
+//    v_conv_a = 2*v_conv_alfa/vdc;
+//    v_conv_b = 2*(-0.5*v_conv_alfa + (raiz_de_3/2)*v_conv_beta)/vdc;
+//    v_conv_c = 2*(-0.5*v_conv_alfa - (raiz_de_3/2)*v_conv_beta)/vdc;
+////-------------------------------------------//
+//
+////    a1 = vg_alfa;
+////    a2 = vg_beta;
+////    a3 = vg_d;
+////    a4 = vg_q;
+//     float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c, i_out;
+//    a1 = vdc;
+//    a2 = vg_a;
+//    a3 = vg_b;
+//    a4 = vg_c;
+//    a5 = ig_a;
+//    a6 = ig_b;
+//    a7 = ig_c;
+//    a8 = i_out;
+//    a9 = vg_d;
+//    a10 = vg_q;
+//    a1 = (float)(AdcaResultRegs.ADCRESULT1);
+//    a2 = (float)(AdcaResultRegs.ADCRESULT2);
+
+}
+
+__interrupt void Cla1Task7 (void) // Normal mode
+{
+    __mdebugstop();
+//------------Lectura-de-variables-----------//
+//    float vdc, vg_a, vg_b, vg_c, ig_a, ig_b, ig_c, i_out;
+//
+//    vdc  = ((float)(AdcaResultRegs.ADCRESULT0)*m_vdc  - n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V | RTBox Pin AO15
+//    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   - n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
+//    vg_b = ((float)(AdcaResultRegs.ADCRESULT2)*m_vg   - n_vg);   // Curva para ADC-A2, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO11
+//    vg_c = ((float)(AdcaResultRegs.ADCRESULT3)*m_vg   - n_vg);   // Curva para ADC-A3, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO9
+//    ig_a = ((float)(AdcaResultRegs.ADCRESULT4)*m_ig   - n_ig);   // Curva para ADC-A4, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO7
+//    ig_b = ((float)(AdcbResultRegs.ADCRESULT6)*m_ig   - n_ig);   // Curva para ADC-B0, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO14
+//    ig_c = ((float)(AdcbResultRegs.ADCRESULT7)*m_ig   - n_ig);   // Curva para ADC-B1, Voltaje entre  -20 a 50V, de 0 a 3.3V | RTBox Pin AO12
+//    i_out= ((float)(AdcbResultRegs.ADCRESULT8)*m_iout - n_iout); // Curva para ADC-B2, Voltaje entre   0-15V,    de 0 a 3.3V | RTBox Pin AO10
+//
+////-------------------------------------------//
+////----------transf_abc-a-alfa-beta-----------//
+//    float vg_alfa, vg_beta, ig_alfa, ig_beta;
+//
+//    vg_alfa = dos_div_3*vg_a - uno_div_3*vg_b - uno_div_3*vg_c;
+//    vg_beta = vg_b/raiz_de_3 - vg_c/raiz_de_3;
+//    ig_alfa = dos_div_3*ig_a - uno_div_3*ig_b - uno_div_3*ig_c;
+//    ig_beta = ig_b/raiz_de_3 - ig_c/raiz_de_3;
+//
+//
+////    vg_alfa = ((float)(AdcaResultRegs.ADCRESULT1)*0.252845528 - 467.7642276); // Curva para ADC-A1, con voltaje alfa +-311, de 0.5 a 2.5V
+////    vg_beta = ((float)(AdcaResultRegs.ADCRESULT2)*0.252845528 - 467.7642276);  // Curva para ADC-A2, con voltaje beta +-311, de 0.5 a 2.5V
+//
+////-----Limitaciones al voltaje Vg_alfa y vg_beta, en caso de ser necesario-----//
+////    if (vg_alfa > 311.13)
+////    {
+////        vg_alfa = 311.12;
+////    }
+////    else if (vg_alfa < -311.13)
+////    {
+////        vg_alfa = -311.12;
+////    }
+////    else
+////    {
+////    }
+////
+////    if (vg_beta > 311.13)
+////    {
+////        vg_beta = 311.12;
+////    }
+////    else if (vg_beta < -311.13)
+////    {
+////        vg_beta = -311.12;
+////    }
+////    else
+////    {
+////    }
+////-------------------------------------------//
+////----------alfa-beta-a-dq-mas-menos---------//
+//    float vg_d, vg_q, ig_d, ig_q;
+//    // datos para DDSRF-PLL
+//
+//    float cos_theta_ddsrf, sin_theta_ddsrf, cos_mas_2_theta, sen_mas_2_theta, cos_men_2_theta, sin_men_2_theta;
+//
+//    cos_theta_ddsrf = CLAcos(   theta_ddsrf_l);
+//    sin_theta_ddsrf = CLAsin(   theta_ddsrf_l);
+//    cos_mas_2_theta = CLAcos( 2*theta_ddsrf_l);
+//    sen_mas_2_theta = CLAsin( 2*theta_ddsrf_l);
+//    cos_men_2_theta = CLAcos(-2*theta_ddsrf_l);
+//    sin_men_2_theta = CLAsin(-2*theta_ddsrf_l);
+//
+//
+//    vg_d    =  cos_theta_ddsrf*vg_alfa + sin_theta_ddsrf*vg_beta;
+//    vg_q    = -sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//    ig_d    =  cos_theta_ddsrf*ig_alfa + sin_theta_ddsrf*ig_beta;
+//    ig_q    = -sin_theta_ddsrf*ig_alfa + cos_theta_ddsrf*ig_beta;
+//
+//
+//    float vg_d_men, vg_q_men, vg_d_mas, vg_q_mas, vg_d_men_ref, vg_q_men_ref, vg_d_mas_ref, vg_q_mas_ref;
+//
+//    vg_d_men =  cos_theta_ddsrf*vg_alfa - sin_theta_ddsrf*vg_beta;
+//    vg_q_men =  sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//
+//    vg_d_mas =  cos_theta_ddsrf*vg_alfa + sin_theta_ddsrf*vg_beta;
+//    vg_q_mas = -sin_theta_ddsrf*vg_alfa + cos_theta_ddsrf*vg_beta;
+//
+//    vg_d_men_ref = vg_d_men - ( cos_men_2_theta*vg_d_mas_prom_l + sin_men_2_theta*vg_q_mas_prom_l);
+//    vg_q_men_ref = vg_q_men - (-sin_men_2_theta*vg_d_mas_prom_l + cos_men_2_theta*vg_q_mas_prom_l);
+//
+//    vg_d_mas_ref = vg_d_mas - ( cos_mas_2_theta*vg_d_men_prom_l + sen_mas_2_theta*vg_q_men_prom_l);
+//    vg_q_mas_ref = vg_q_mas - (-sen_mas_2_theta*vg_d_men_prom_l + cos_mas_2_theta*vg_q_men_prom_l);
+//
+//    // LPF
+//
+//    vg_d_men_prom_g = vg_d_men_ref_ant_l*omega_lpf*h_sample + vg_d_men_prom_ant_l*(1-omega_lpf*h_sample);
+//    vg_q_men_prom_g = vg_q_men_ref_ant_l*omega_lpf*h_sample + vg_q_men_prom_ant_l*(1-omega_lpf*h_sample);
+//
+//    vg_d_mas_prom_g = vg_d_mas_ref_ant_l*omega_lpf*h_sample + vg_d_mas_prom_ant_l*(1-omega_lpf*h_sample);
+//    vg_q_mas_prom_g = vg_q_mas_ref_ant_l*omega_lpf*h_sample + vg_q_mas_prom_ant_l*(1-omega_lpf*h_sample);
+//
+////-------------------------------------------//
+////-------------Sincronización_PLL------------//
+//    float actuac_ddsrf, theta_ddsrf_prueba;
+//
+//    actuac_ddsrf = integr_ddsrf_l*ki_pll + vg_q*kp_pll + 2*pi*f;
+//    integr_ddsrf_g = h_sample*vg_q_mas_ref + integr_ddsrf_ant_l;
+//    theta_ddsrf_prueba  = h_sample*actuac_ddsrf + theta_ddsrf_ant_l;
+//    if (theta_ddsrf_prueba >= lim_up_pll)
+//    {
+//        theta_ddsrf_prueba = theta_ddsrf_prueba - lim_up_pll;   //% theta_g - lim_upp_pll;  %// reinicia el valor de la triangular cuando alcanza 2pi
+//    }
+//    theta_ddsrf_g = theta_ddsrf_prueba;
+//
+////-------------------------------------------//
+////----------Controlador-de-voltaje-----------//
+//    float err_v, u_v, id_ref;
+//
+//    err_v   = vdc_ref*vdc_ref - vdc*vdc;
+//    u_v     = KNO_v*(err_v - x_v_l);
+//        if (u_v > MAX_ACT_v)
+//        {
+//        u_v = MAX_ACT_v;
+//        }
+//    else if (u_v < MIN_ACT_v)
+//        {
+//    u_v = MIN_ACT_v;
+//        }
+//    x_v_g     = PIAWU_N1_v*u_v + PIAWU_D1_v*x_ant_v_l;
+//    id_ref = u_v - kpv1*vdc*vdc;
+//
+////-------------------------------------------//
+////---------Controlador-de-corriente-d--------//
+//    float err_i_d, u_id, v_conv_d;
+//
+//    err_i_d = id_ref - ig_d;
+//    u_id = KN0_i*(err_i_d - x_id_l);
+//    if (u_id > MAX_ACT_i)
+//        {
+//         u_id = MAX_ACT_i;
+//        }
+//    else if (u_id < MIN_ACT_i)
+//         {
+//          u_id = MIN_ACT_i;
+//         }
+//    x_id_g     = PIAWU_N1_i*u_id + PIAWU_D1_i*x_ant_id_l;
+//    v_conv_d = vg_d + ig_q*2*pi*f*L - u_id;
+//
+////-------------------------------------------//
+////---------Controlador-de-corriente-q--------//
+//
+//    float err_i_q, u_iq, v_conv_q;
+//
+//    err_i_q  = iq_ref - ig_q;
+//    u_iq     = KN0_i*(err_i_q - x_iq_l);
+//    if (u_iq > MAX_ACT_i)
+//        {
+//            u_iq = MAX_ACT_i;
+//        }
+//     else if (u_iq < MIN_ACT_i)
+//         {
+//             u_iq = MIN_ACT_i;
+//         }
+//    x_iq_g     = PIAWU_N1_i*u_iq + PIAWU_D1_i*x_ant_iq_l;
+//    v_conv_q = vg_q - ig_d*2*pi*f*L - u_iq;
+//
+////-------------------------------------------//
+////----------actualizacion-variables----------//
+//    //----------Actualizacion_PLL--------------//
+//
+//        vg_d_men_ref_ant_g  = vg_d_men_ref;
+//        vg_d_men_prom_ant_g = vg_d_men_prom_g;
+//
+//        vg_q_men_ref_ant_g  = vg_q_men_ref;
+//        vg_q_men_prom_ant_g = vg_q_men_prom_g;
+//
+//        vg_d_mas_ref_ant_g  = vg_d_mas_ref;
+//        vg_d_mas_prom_ant_g = vg_d_mas_prom_g;
+//
+//        vg_q_mas_ref_ant_g  = vg_q_mas_ref;
+//        vg_q_mas_prom_ant_g = vg_q_mas_prom_g;
+//
+//        // PI del DDSRF-PLL
+//        integr_ddsrf_ant_g = integr_ddsrf_g;
+//        theta_ddsrf_ant_g  = theta_ddsrf_g;
+//    //-------------------------------------------//
+//
+//    x_ant_v_g = x_v_g;                  //controlador de voltaje
+//
+//    x_ant_id_g = x_id_g;                //controlador i_d
+//
+//    x_ant_iq_g = x_iq_g;                //controlador i_q
+////-------------------------------------------//
+////--------------dq-a-alpha_beta--------------//
+//    float v_conv_alfa, v_conv_beta;
+//
+//    v_conv_alfa = cos_theta_ddsrf*v_conv_d - sin_theta_ddsrf*v_conv_q;
+//    v_conv_beta = sin_theta_ddsrf*v_conv_d + cos_theta_ddsrf*v_conv_q;
+////-------------------------------------------//
+////--------------alpha_beta-a-abc-------------//
+//    v_conv_a = 2*v_conv_alfa/vdc;
+//    v_conv_b = 2*(-0.5*v_conv_alfa + (raiz_de_3/2)*v_conv_beta)/vdc;
+//    v_conv_c = 2*(-0.5*v_conv_alfa - (raiz_de_3/2)*v_conv_beta)/vdc;
+////-------------------------------------------//
+//
+////    a1 = theta_ddsrf_g;
+////    a2 = vg_alfa;
+////    a3 = vg_beta;
+//    a1 = vdc;
+//    a2 = vg_a;
+//    a3 = vg_b;
+//    a4 = vg_c;
+//    a5 = ig_a;
+//    a6 = ig_b;
+//    a7 = ig_c;
+//    a8 = i_out;
+//    a9 = vg_d;
+//    a10 = vg_q;
+
+
+}
+
+__interrupt void Cla1Task8 (void)
+{
+
+}
+//
+// End of file
+//
+
