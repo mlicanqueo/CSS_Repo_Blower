@@ -21,41 +21,42 @@ extern "C" {
 //------------Variables-de-prueba------------//
 extern float aaa;
 //extern float V_high, V_low;
-extern float resultado[15];
+extern double resultado[15];
 extern double resultado2;
 extern double resultado3;
 extern int16 PWM_CMPA_mod;
 //extern float Num,Den; //A/B user input at the C28x side
 //-------------------------------------------//
 //----------Controlador-de-voltaje_dcdc------//
-#define vdc_ref     100.0
+#define vdc_ref     90.0
 //#define MAX_ACT_v   480.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define MAX_ACT_v   10.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
-#define MIN_ACT_v     0.0
-#define IMAX_est    250.0
+#define MIN_ACT_v    0.0
+#define IMAX_est   250.0
 
 
-#define PIAWU_D1_v    0.9998
-#define PIAWU_N1_v   -0.0094
-#define KNO_v         0.0267
+#define KNO_v        0.0267
+#define PIAWU_N1_v  -0.0092
+#define PIAWU_D1_v   1.0
 
-extern float x_v_l;
-extern float x_v_g;
-extern float x_ant_v_l;
-extern float x_ant_v_g;
+extern double x_v_l;
+extern double x_v_g;
+extern double x_ant_v_l;
+extern double x_ant_v_g;
 //-------------------------------------------//
 //---------Controlador-de-corriente----------//
 //#define KN0_i       10.364817
 #define KN0_i         0.0010
-#define MAX_ACT_i     0.95
+#define MAX_ACT_i     0.99
 #define MIN_ACT_i     0.00
 #define PIAWU_D1_i    0.9980
 #define PIAWU_N1_i   -1.9920
 
-#define DMAX          0.95
+#define DMAX          0.98
 #define DMIN          0.00
-#define IMAX          300
-//#define IMAX          80
+//#define IMAX          300
+#define IMAX         10.0
+#define MAX_ACT_v    10.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define IMIN          0.00
 
 #define Fpwm_dcdc     5000
@@ -68,11 +69,11 @@ extern float x_ant_v_g;
 //#define alpha         3
 
 extern uint16_t i_count;
-extern float x_i_l[3];
-extern float x_i_g[3];
+extern double x_i_l[3];
+extern double x_i_g[3];
 
-extern float x_ant_i_l[3];
-extern float x_ant_i_g[3];
+extern double x_ant_i_l[3];
+extern double x_ant_i_g[3];
 
 extern uint16_t i_count_g;
 extern uint16_t i_count_l;
@@ -90,14 +91,16 @@ extern float duty_vc;
 // Para interpretar la lectura del adc, se deben trazar una curva de 1° orden de la forma y = mx+n,
 // donde y es la interpretación de lectura y x es el numero de cuentas de ADC.
 
-#define m_vdc       0.4888
+#define m_vdc       0.4876
+#define n_vdc    -995.12
 //#define m_vg      0.170940171
 #define m_i         0.1433
-//#define m_iout    0.003663004
-
-#define n_vdc    -998.73
-//#define n_vg        350
 #define n_i      -314.92
+//#define m_iout    0.003663004
+#define m_i_2       0.1464
+#define n_i_2    -303.89
+#define N_vueltas  20.0
+//#define n_vg        350
 //#define n_iout      0.0
 
 #define pi          3.14159265

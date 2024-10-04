@@ -320,6 +320,7 @@ Uint16 EPwm1_DB_Direction;
 // Start of main
 //
 void main(void)
+
 {
 // Step 1. Initialize System Control:
 // PLL, WatchDog, enable Peripheral Clocks
