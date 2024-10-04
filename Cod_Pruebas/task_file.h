@@ -30,7 +30,8 @@ extern int16 PWM_CMPA_mod;
 //----------Controlador-de-voltaje_dcdc------//
 #define vdc_ref     90.0
 //#define MAX_ACT_v   480.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
-#define MAX_ACT_v   10.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
+#define MAX_ACT_v   10.0    // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
+#define IMAX        10.0    // se usa para el control de corriente
 #define MIN_ACT_v    0.0
 #define IMAX_est   250.0
 
@@ -55,8 +56,7 @@ extern double x_ant_v_g;
 #define DMAX          0.98
 #define DMIN          0.00
 //#define IMAX          300
-#define IMAX         10.0
-#define MAX_ACT_v    10.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
+
 #define IMIN          0.00
 
 #define Fpwm_dcdc     5000
