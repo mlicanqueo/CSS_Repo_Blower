@@ -28,17 +28,26 @@ extern int16 PWM_CMPA_mod;
 //extern float Num,Den; //A/B user input at the C28x side
 //-------------------------------------------//
 //----------Controlador-de-voltaje_dcdc------//
-#define vdc_ref     90.0
+#define vdc_ref     300.0
 //#define MAX_ACT_v   480.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
-#define MAX_ACT_v   10.0    // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
-#define IMAX        10.0    // se usa para el control de corriente
-#define MIN_ACT_v    0.0
-#define IMAX_est   250.0
+#define MAX_ACT_v    40.0    // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
+#define IMAX         40.0    // se usa para el control de corriente
+#define MIN_ACT_v    0.0    //asdasdsad
+#define IMAX_est   250.0    // ahora no se ocupa
 
 
-#define KNO_v        0.0267
-#define PIAWU_N1_v  -0.0092
-#define PIAWU_D1_v   1.0
+//#define KNO_v        0.0267
+//#define PIAWU_N1_v  -0.0092
+//#define PIAWU_D1_v   1.0
+
+//#define KNO_v        0.0501
+//#define PIAWU_N1_v  -0.0398
+//#define PIAWU_D1_v   0.9980
+
+#define KNO_v        0.0100
+#define PIAWU_N1_v  -0.0500
+#define PIAWU_D1_v   0.9995
+
 
 extern double x_v_l;
 extern double x_v_g;
@@ -49,7 +58,7 @@ extern double x_ant_v_g;
 //#define KN0_i       10.364817
 #define KN0_i         0.0010
 #define MAX_ACT_i     0.99
-#define MIN_ACT_i     0.00
+#define MIN_ACT_i     0.01
 #define PIAWU_D1_i    0.9980
 #define PIAWU_N1_i   -1.9920
 
@@ -99,7 +108,7 @@ extern float duty_vc;
 //#define m_iout    0.003663004
 #define m_i_2       0.1464
 #define n_i_2    -303.89
-#define N_vueltas  20.0
+#define N_vueltas   9.0
 //#define n_vg        350
 //#define n_iout      0.0
 

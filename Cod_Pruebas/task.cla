@@ -255,16 +255,16 @@ __interrupt void Cla1Task1 (void)
 //    V_high = (((AdcaResultRegs.ADCRESULT0)*m_vdc  + n_vdc));  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
 //    V_low = ((float)((AdcaResultRegs.ADCRESULT1)*m_vdc  + n_vdc));  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
 
-    V_low  =  ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;    // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
-    V_high =  ((float)(AdcaResultRegs.ADCRESULT0))*m_vdc+n_vdc;    // Curva para ADC-A1, Voltaje entre   0-1000V,  de 0 a 3.3V |
+    V_low  =  ((float)(AdcaResultRegs.ADCRESULT2))*m_vdc+n_vdc;    // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+    V_high =  ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;    // Curva para ADC-A1, Voltaje entre   0-1000V,  de 0 a 3.3V |
 //    Imax[0] = AdcaResultRegs.ADCRESULT2*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
     Imax[1] = AdcaResultRegs.ADCRESULT3*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
     Imax[2] = AdcaResultRegs.ADCRESULT4*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
 
     //    il[0] = ((((AdcaResultRegs.ADCRESULT2)+(AdcaResultRegs.ADCRESULT3)+(AdcaResultRegs.ADCRESULT4))/3)*m_i   - n_i)/20.0;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
-        promedio = (AdcaResultRegs.ADCRESULT2 + AdcaResultRegs.ADCRESULT3 + AdcaResultRegs.ADCRESULT4)/3.0;
-        Imax[0] = promedio*m_i_2/N_vueltas + n_i_2/N_vueltas;
-
+    promedio = (AdcaResultRegs.ADCRESULT2 + AdcaResultRegs.ADCRESULT3 + AdcaResultRegs.ADCRESULT4)/3.0;
+//    Imax[0] = promedio*m_i_2/N_vueltas + n_i_2/N_vueltas;
+    Imax[0] = ((float)(AdcaResultRegs.ADCRESULT0))*m_i_2/N_vueltas + n_i_2/N_vueltas;
 
 
 ////    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   + n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
@@ -282,7 +282,7 @@ __interrupt void Cla1Task1 (void)
 
 //    V_high = 520.0;
 //    Imax[0] = 10;
-    float frecuencia, amplitud;
+//    float frecuencia, amplitud;
     double err_v, u_v, i_ref;
     double Idc_inv_est;     // Corriente que sale desde el controlador V/F
     double Voff, Von, Vss;
@@ -370,11 +370,11 @@ __interrupt void Cla1Task1 (void)
     Iavg_max_ccm = 0.99*(L0/alpha - (2.0/3.0)*CLAsqrt(2*Tpwm_dcdc*Vss/alpha)); // Esta restricción sale del límite identificado en la tesis
 
 //    // Prealimentación
-//    Iavg_ref = Ik_ref[i_count_l]*V_high/V_low;
-//    Iavg_ref = (Iavg_ref > 0)? Iavg_ref: 0;
+    Iavg_ref = Ik_ref[i_count_l]*V_high/V_low;
+    Iavg_ref = (Iavg_ref > 0)? Iavg_ref: 0;
 //
 
-    Iavg_ref = Ik_ref[i_count_l];
+//    Iavg_ref = Ik_ref[i_count_l];
 
     Iavg_ref_dcm = (Iavg_ref > Iavg_max_dcm)? Iavg_max_dcm: Iavg_ref;
     Iavg_ref_ccm = (Iavg_ref > Iavg_max_ccm)? Iavg_max_ccm: Iavg_ref;
@@ -485,16 +485,98 @@ __interrupt void Cla1Task1 (void)
 ////-------------------------------------------//
 ////-------------------------------------------//
 //
-        resultado [0] = promedio;
-        resultado [1] = Imax[0];
-        resultado [2] = AdcaResultRegs.ADCRESULT2;//*m_i_2   + n_i_2;
-        resultado [3] = i_ref;
-        resultado [4] = err_v;
+
+//-------------------------------------------//
+//--------------Control_Inversor-------------//
+
+//    Calculo del angulo
+        float amplitud;
+        float angulo;
+        float v_alfa, v_beta;
+        float va,vb,vc;
+        float v_minmax, v_minmax_min, v_minmax_max;
+    //    V_high = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc + n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//        V_high =  ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;    // Curva para ADC-A1, Voltaje entre   0-1000V,  de 0 a 3.3V |
+        //    V_high = 750;
+        contador_g = contador_l;
+
+        if (2*pi*frec_vf*contador_g > pi){
+            contador_g = contador_g - 1.0/frec_vf;
+        }
+
+        angulo = 2*pi*frec_vf*contador_g;
+
+        amplitud = (voltaje_vf > V_high/sqrt_3)? V_high/sqrt_3: voltaje_vf;
+
+        v_alfa = amplitud*CLAcos(angulo);
+        v_beta = amplitud*CLAsin(angulo);
+
+        va = v_alfa;
+        vb = 0.5*(-v_alfa + sqrt_3*v_beta);
+        vc = 0.5*(-v_alfa - sqrt_3*v_beta);
+
+    // minmax
+        if (va<vb){
+            if (va<vc){
+                v_minmax_min = va;
+            }
+            else{
+                v_minmax_min = vc;
+            }
+            if (vb>vc){
+                v_minmax_max = vb;
+            }
+            else{
+                v_minmax_max = vc;
+            }
+        }
+        else{
+            if (vb<vc){
+                v_minmax_min = vb;
+            }
+            else{
+                v_minmax_min = vc;
+            }
+            if (va>vc){
+                v_minmax_max = va;
+            }
+            else{
+                v_minmax_max = vc;
+            }
+        }
+
+        v_minmax = 0.5*(v_minmax_min + v_minmax_max);
+
+        duty_va = (va-v_minmax)/(V_high / 2.0);
+        duty_vb = (vb-v_minmax)/(V_high / 2.0);
+        duty_vc = (vc-v_minmax)/(V_high / 2.0);
+
+        duty_va = (duty_va+1.0)/2.0;
+        duty_vb = (duty_vb+1.0)/2.0;
+        duty_vc = (duty_vc+1.0)/2.0;
+//--------------Control_Inversor-------------//
+//-------------------------------------------//
+
+
+
+//        resultado [0] = AdcaResultRegs.ADCRESULT0;
+        resultado [0] = V_low;
+        resultado [1] = V_high;
+        resultado [2] = i_ref;
+        resultado [3] = promedio;
+        resultado [4] = V_high;
         resultado [5] = u_v;
         resultado [6] = Iavg_ref;
         resultado [7] = x_v_l;
-        resultado [8] = x_i_g[0];
+        resultado [8] = x_i_g[0]*1000;
         resultado [9] = V_low;
+
+        resultado [0] = AdcaResultRegs.ADCRESULT0;
+        resultado [1] = AdcaResultRegs.ADCRESULT2;
+        resultado [2] = AdcaResultRegs.ADCRESULT1;
+//        resultado [3] = AdcaResultRegs.ADCRESULT3;
+//        resultado [4] = AdcaResultRegs.ADCRESULT4;
+
 }
 
 __interrupt void Cla1Task4 (void)
@@ -510,12 +592,8 @@ __interrupt void Cla1Task4 (void)
     float v_minmax, v_minmax_min, v_minmax_max;
 //    V_high = ((float)(AdcaResultRegs.ADCRESULT1)*m_vdc + n_vdc);  // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
     V_high =  ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;    // Curva para ADC-A1, Voltaje entre   0-1000V,  de 0 a 3.3V |
-
-
     //    V_high = 750;
-
     contador_g = contador_l;
-
 
     if (2*pi*frec_vf*contador_g > pi){
         contador_g = contador_g - 1/frec_vf;

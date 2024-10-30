@@ -107,7 +107,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="sci_prueba.c|SCI_GPT.c|ACDC_drive.c|ACDC_drive_test.c|ACDC_drive_test_2.c|main.c|fir32.asm|cla_adc_fir32_cpu01.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="ACDC_drive_test_dcdc_Inversor.c|sci_prueba.c|SCI_GPT.c|ACDC_drive.c|ACDC_drive_test.c|ACDC_drive_test_2.c|main.c|fir32.asm|cla_adc_fir32_cpu01.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
