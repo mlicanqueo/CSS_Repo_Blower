@@ -189,6 +189,14 @@ __interrupt void Cla1Task1 (void)
     delta = (2*a*a*a - 27*b) / (2*a*a*a);
     Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin(delta) / 3.0));
 
+//        int i = 0;
+//        __mdebugstop();
+//        fResult1 = CLAasin(fVal);
+//        for(i = 0; i < 8; ++i)
+//        {
+//            fResult1 = fResult1 + (-CLAsin(fResult1) + fVal) / CLAcos(fResult1);
+//        }
+
 ////////////////////////////////////////////////////
 // Calculo corriente máxima de frontera
 ////////////////////////////////////////////////////
