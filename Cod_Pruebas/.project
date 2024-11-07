@@ -141,11 +141,6 @@
 			<type>1</type>
 			<locationURI>PARENT-1-ORIGINAL_PROJECT_ROOT/cla_adc_fir32_cpu01.c</locationURI>
 		</link>
-		<link>
-			<name>fir32.asm</name>
-			<type>1</type>
-			<locationURI>PARENT-1-ORIGINAL_PROJECT_ROOT/fir32.asm</locationURI>
-		</link>
 	</linkedResources>
 	<variableList>
 		<variable>

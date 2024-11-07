@@ -96,8 +96,8 @@
 
 // DCDC
 //#define PWM_TBPRD_inversor 1250
-#define PWM_TBPRD_dcdc 4160
-#define PWM_TBPRD_dcdc 1249 //modo up
+//#define PWM_TBPRD_dcdc 4160
+//#define PWM_TBPRD_dcdc 1249 //modo up
 #define PWM_TBPRD_dcdc 2500
 #define CMPA_dcdc      1000
 int16 CMPA_Boost_a;     //CMPA Boost pierna a
@@ -117,21 +117,22 @@ float n_frec;
 float n_volt;
 #define PWM_TBPRD_inversor 1250
 //#define PWM_TBPRD_inversor 625
-#define Inversor_phase1 (PWM_TBPRD_inversor/3.0)*0.0
-#define Inversor_phase2 (PWM_TBPRD_inversor/3.0)*0.0
-#define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*0.0
+#define Inversor_phase1 (PWM_TBPRD_inversor/3.0)*3.0
+#define Inversor_phase2 (PWM_TBPRD_inversor/3.0)*2.0
+#define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*1.0
 #define t_inicio_rampa 5.0
 #define t_final_rampa 60.0
 //#define t_inicio_rampa 0.12
 //#define t_final_rampa  0.20
 
-#define f_min_vf  10.0
-#define f_max_vf  62.0       //frecuencia maxima a aplicar, segun placa.
+#define f_min_vf  5.0
+//#define f_max_vf  62.0       //frecuencia maxima a aplicar, segun placa.
+#define f_max_vf  25.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
 #define v_min_vf   0.0
-//#define v_max_vf 220.0       //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
+#define v_max_vf 220.0      //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
 //#define v_max_vf 80.0       //voltaje de fase maximo a aplicara, en RMS.
-//#define v_max_vf 280.0       //voltaje de fase maximo a aplicara, en RMS, para blower AC.
-#define v_max_vf 113.0       //voltaje de fase a aplicara, en RMS, para blower AC, a 1000RPM, 33HZ.
+//#define v_max_vf 280.0      //voltaje de fase maximo a aplicara, en RMS, para blower AC.
+//#define v_max_vf 113.0      //voltaje de fase a aplicara, en RMS, para blower AC, a 1000RPM, 33HZ.
 //#define PHASE3 20834  // Frecuencia 100 hz
 
 //#define PWM_TBPRD 97656 // Frecuencia de 2khz
@@ -666,17 +667,11 @@ EDIS;
 //                                GPIO_WritePin(1, 1);        //Aux
 //                            }
                     }
-//                    DELAY_US(1000*5000);
-//                    estado = normal_mode;
 
                     EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM3A on Zero
                     EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
-//                    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;        // Set PWM3A on Zero
                     EPwm3Regs.AQCTLB.bit.CAU = AQ_SET  ;          // Set PWM3B on Zero
                     EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
-//                    EPwm3Regs.AQCTLB.bit.CAD = AQ_SET;          // Set PWM3B on ONE
-
-
 
 //                    // descomentar cuando se active el interleaved.
 //
@@ -708,10 +703,6 @@ EDIS;
                     e = (uint16_t)(resultado [8]);   //
                     g = (uint16_t)(resultado [5]);             //
 
-//                    d = (uint16_t)(AdcaResultRegs.ADCRESULT1); // vhigh;
-//                    e = (uint16_t)(AdcaResultRegs.ADCRESULT0); // vlow
-//                    g = (uint16_t)(AdcaResultRegs.ADCRESULT2); // I_ADC1
-
                     scia_xmit(((a>>6))|(0x80));
                     scia_xmit(a&0x13F);
 
@@ -741,7 +732,7 @@ EDIS;
 //                    }
 
 //                }
-                if (resultado [9] < 10.0)
+                if (resultado [0] < 10.0)
                 {
                     estado = apagado;
                 }
@@ -774,11 +765,11 @@ EDIS;
                 EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
                 GPIO_WritePin(0, 0);                            // Precarga, C
 
-                if (resultado[9] > 10.0)
+                if (resultado[0] > 10.0)
                 {
                     estado = idle;
-                    x_ant_v_l = 0;      // estado inicial = 0
-                    x_v_l     = 0;      // estado inicial = 0
+                    x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
+                    x_v_l     = 0;      // Guardado de variables controlador de voltaje
 
                 }
 
@@ -1432,28 +1423,6 @@ void corrimiento_izq(float v1){
 interrupt void adca1_isr2(void)
 {
 
-//    test_1    = 2;
-//    v_dclink = (((int16)(AdcaResultRegs.ADCRESULT0)*m_vdc + n_vdc));//revisado con la cone4xion de los verivolt
-//    v_input = (((int16)(AdcaResultRegs.ADCRESULT1)*m_vdc + n_vdc));
-
-////    ADCread0 = (AdcaResultRegs.ADCRESULT0);
-//    ADCread1 = (AdcaResultRegs.ADCRESULT1);
-//    ADCread2 = (AdcaResultRegs.ADCRESULT0);
-//    ADCread[3] = (float) ADCread2;
-//    ADCread[4] = ADCread[3]*m_vdc + n_vdc;
-//    ADCread3 = (AdcaResultRegs.ADCRESULT3);
-//    ADCread4 = (AdcaResultRegs.ADCRESULT4);
-//    ADCread5 = (AdcaResultRegs.ADCRESULT5);
-//    ADCread6 = (AdcbResultRegs.ADCRESULT0);
-//    ADCread7 = (AdcbResultRegs.ADCRESULT1);
-//    ADCread8 = (AdcbResultRegs.ADCRESULT2);
-//    ADCread9 = (AdcbResultRegs.ADCRESULT3);
-//    ADCread10 =(AdcbResultRegs.ADCRESULT4);
-//    ADCread11 =(AdcbResultRegs.ADCRESULT5);
-//    ADCread12 =(AdccResultRegs.ADCRESULT2);
-//    ADCread13 =(AdccResultRegs.ADCRESULT3);
-//    ADCread14 =(AdccResultRegs.ADCRESULT4);
-//    ADCread15 =(AdccResultRegs.ADCRESULT5);
 
     AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //clear INT1 flag
     //
@@ -1461,8 +1430,6 @@ interrupt void adca1_isr2(void)
     //
     if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)
     {
-//        AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; //clear INT1 overflow flag
-//        AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //clear INT1 flag
         AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; //clear INT1 overflow flag
         AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //clear INT1 flag
     }
@@ -1471,30 +1438,6 @@ interrupt void adca1_isr2(void)
 //    PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
     PieCtrlRegs.PIEACK.bit.ACK1 = 1; //(PIEACK_GROUP1 | PIEACK_GROUP11);
 
-
-
-//    EPwm3Regs.CMPA.bit.CMPA = PWM_CMPA_mod;
-//    EPwm4Regs.CMPA.bit.CMPA = PWM_CMPA_mod;
-//    EPwm7Regs.CMPA.bit.CMPA = PWM_CMPA_mod;
-
-//    GPIO_WritePin(64, 0);// se usa para medir el tiempo de ejecución del programa
-//    GPIO_WritePin(64, 1);// se usa para medir el tiempo de ejecución del programa
-//    GPIO_WritePin(64, 0);// se usa para medir el tiempo de ejecución del programa
-
-//    x_ant_i_l[1] = 0;
-//    ct1 = EPwm3Regs.TBCTR;
-//    ct3 = CpuTimer1Regs.TIM.all;
-//    Cla1ForceTask1();
-//    Cla1ForceTask1andWait();
-//    x_ant_i_l[1] = 1;
-//a1 = CpuTimer1Regs.TIM;
-//    a = alpha;
-//    b = 1 + alpha;
-//    a = 2*a*3+1;
-//    d = a/alpha;
-//    c = 3.0*2.0*alpha+1;
-//    d = alpha/2;
-//    alpha
 
 }
 
@@ -1510,6 +1453,8 @@ __interrupt void cla1Isr1 () // DCDC
     }
     PieCtrlRegs.PIEACK.bit.ACK11 = 1; // all = (PIEACK_GROUP1 | PIEACK_GROUP11);
 
+////----------------Control_DCDC---------------//
+////-------------------------------------------//
 //----------Controlador-de-voltaje-----------//
     if (i_count_l == 0)
     {

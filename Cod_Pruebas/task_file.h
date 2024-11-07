@@ -28,7 +28,7 @@ extern int16 PWM_CMPA_mod;
 //extern float Num,Den; //A/B user input at the C28x side
 //-------------------------------------------//
 //----------Controlador-de-voltaje_dcdc------//
-#define vdc_ref     300.0
+#define vdc_ref     100.0
 //#define MAX_ACT_v   480.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define MAX_ACT_v    40.0    // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define IMAX         40.0    // se usa para el control de corriente

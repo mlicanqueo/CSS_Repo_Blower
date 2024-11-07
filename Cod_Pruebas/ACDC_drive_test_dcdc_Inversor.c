@@ -98,7 +98,7 @@
 //#define PWM_TBPRD_inversor 1250
 #define PWM_TBPRD_dcdc 4160
 #define PWM_TBPRD_dcdc 1249 //modo up
-//#define PWM_TBPRD_dcdc 1000
+#define PWM_TBPRD_dcdc 2500
 #define CMPA_dcdc      1000
 int16 CMPA_Boost_a;     //CMPA Boost pierna a
 int16 CMPA_Boost_b;     //CMPA Boost pierna b
@@ -127,7 +127,7 @@ float n_volt;
 
 #define f_min_vf  5.0
 //#define f_max_vf  62.0       //frecuencia maxima a aplicar, segun placa.
-#define f_max_vf  25.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
+#define f_max_vf  49.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
 #define v_min_vf   0.0
 #define v_max_vf 220.0      //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
 //#define v_max_vf 80.0       //voltaje de fase maximo a aplicara, en RMS.
@@ -638,15 +638,14 @@ EDIS;
                     EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM11B on Zero
                     EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM12A on Zero
                     EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
-
-
-
-
 //                    GPIO_WritePin(0, 0);        //Precarga, C
 //                    DELAY_US(1000*2000);
 //                    estado = normal_mode;
 
                     if (1){
+//                        DELAY_US(1000*5000);
+//                        GPIO_WritePin(0, 1);        //Precarga, C
+//                        DELAY_US(1000*10000);
                         estado = normal_mode;
                         EALLOW;
                         DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK1 = 1;
@@ -705,10 +704,6 @@ EDIS;
                     EPwm12Regs.AQCTLA.bit.CAD = AQ_CLEAR;
                     EPwm12Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
                     EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
-
-
-
-
                 }
             break;
             case normal_mode:
@@ -720,13 +715,12 @@ EDIS;
 ////                    estado = apagado;
 //                    contador_apagado = 0;
 //                }
-
-                    a = (uint16_t)(resultado [0]);   //v_low
-                    b = (uint16_t)(resultado [1]);   //vhigh
-                    c = (uint16_t)(resultado [2]);             //I_adc_1
-                    d = (uint16_t)(AdcaResultRegs.ADCRESULT1); // vhigh;
-                    e = (uint16_t)(AdcaResultRegs.ADCRESULT0); // vlow
-                    g = (uint16_t)(AdcaResultRegs.ADCRESULT2); // I_ADC1
+                    a = (uint16_t)(resultado [1]);   //v_low
+                    b = (uint16_t)(resultado [2]);   //vhigh
+                    c = (uint16_t)(resultado [0]);             //I_adc_1
+                    d = (uint16_t)(resultado [0]);   //
+                    e = (uint16_t)(resultado [8]);   //
+                    g = (uint16_t)(resultado [5]);             //
 
                     scia_xmit(((a>>6))|(0x80));
                     scia_xmit(a&0x13F);
@@ -746,17 +740,6 @@ EDIS;
                     scia_xmit(((g>>6))&(0x13F));
                     scia_xmit(g&0x13F);
 
-                    // CMPB usado para cambiar el inicio de medición del ADC
-                    if (contador_CMPB < PWM_TBPRD_dcdc)
-                    {
-                        contador_CMPB = contador_CMPB + 1;
-                    }
-                    else
-                    {
-                        contador_CMPB =0;
-                    }
-
-
 //                }
                 if (resultado [9] < 10.0)
                 {
@@ -773,9 +756,9 @@ EDIS;
             case apagado:
                 EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
                 EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
-                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
-                EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR  ;          // Set PWM3B on Zero
-                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
+                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
+                EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
+                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
 
 
                 EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
@@ -783,7 +766,7 @@ EDIS;
                 EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
                 EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
 
-                if (resultado [2] < 5.0)
+                if (resultado [6] < 5.0) //eso se agrega para que el dc-link se descargue en el motor, vhigh.
                 {
                     EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
                     EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
@@ -791,7 +774,6 @@ EDIS;
                     EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;
                     EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
                     EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;
-
                 }
 
 
@@ -806,6 +788,9 @@ EDIS;
                 if (resultado[9] > 10.0)
                 {
                     estado = idle;
+                    x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
+                    x_v_l     = 0;      // Guardado de variables controlador de voltaje
+
                 }
 
                 //                EPwm8Regs.TBCTL.bit.CTRMODE = TB_FREEZE;
@@ -864,46 +849,6 @@ EDIS;
 }
 //-----------Maquina-estados-prueba-boost-3-fases-----------------//
 
-
-//            switch (estado)
-//            {
-//            case idle:
-//            {
-//
-//
-//            }
-//            break;
-//
-//            case pre_charge:
-//            {
-//
-//            }
-//            break;
-//
-//            case boost_ON:
-//            {
-//
-//            }
-//            break;
-//
-//            case normal_mode:
-//            {
-//
-//            }
-//            break;
-//
-//            case apagado:
-//            {
-//
-//            }
-//            break;
-//
-//            case fault_mode:
-//            {
-//
-//            }
-//            break;
-//            }
 //}
 
 //
@@ -1177,23 +1122,28 @@ void SetupADCEpwm2(void)
 {
     Uint16 acqps;
 //    acqps = 200; //1us -> (1e-6)/(5e-9), Mínimo son 75, set by ACQPS and  PERx.SYSCLK
-    acqps = 400;
+    acqps = 100;
 
     EALLOW;
-    SetupSOC(socA0, 0, acqps, 0x9); // SOC0 convierte ADC-A0 y hace trigger desde ePWM1(5) con una ventana de acqps
-    SetupSOC(socA1, 1, acqps, 0x9); // SOC1 convierte ADC-A1 y hace trigger desde ePWM1(5) con una ventana de acqps
+//    SetupSOC(socA0, 0, acqps, 0x9); // SOC0 convierte ADC-A0 y hace trigger desde ePWM1(5) con una ventana de acqps
+//    SetupSOC(socA1, 1, acqps, 0x9); // SOC1 convierte ADC-A1 y hace trigger desde ePWM1(5) con una ventana de acqps
+//    SetupSOC(socA2, 5, acqps, 0x9); // SOC2 convierte ADC-A2 y hace trigger desde ePWM3, ADCSOCA con una ventana de acqps
 
-    SetupSOC(socA2, 5, acqps, 0x9); // SOC2 convierte ADC-A2 y hace trigger desde ePWM3, ADCSOCA con una ventana de acqps
+    SetupSOC(socA0, 5, acqps, 0x9); // SOC0 convierte ADC-A0 y hace trigger desde ePWM1(5) con una ventana de acqps
+    SetupSOC(socA1, 0, acqps, 0x9); // SOC1 convierte ADC-A1 y hace trigger desde ePWM1(5) con una ventana de acqps
+    SetupSOC(socA2, 1, acqps, 0x9); // SOC2 convierte ADC-A2 y hace trigger desde ePWM3, ADCSOCA con una ventana de acqps
+
+
 //    SetupSOC(socA3, 3, acqps, 0x9); // SOC3 convierte ADC-A3 y hace trigger desde ePWM4, ADCSOCA con una ventana de acqps
 
-    AdcaRegs.ADCSOC3CTL.bit.CHSEL = 0x5;  //SOC0 will convert pin A1
-    AdcaRegs.ADCSOC4CTL.bit.CHSEL = 0x5;  //SOC0 will convert pin A2
-
-    AdcaRegs.ADCSOC3CTL.bit.ACQPS = acqps;    //sample window
-    AdcaRegs.ADCSOC4CTL.bit.ACQPS = acqps;    //sample window
-
-    AdcaRegs.ADCSOC3CTL.bit.TRIGSEL = 0x9;//trigger on ePWM3 SOCA/C
-    AdcaRegs.ADCSOC4CTL.bit.TRIGSEL = 0x9;//trigger on ePWM3 SOCA/C
+//    AdcaRegs.ADCSOC3CTL.bit.CHSEL = 0x5;  //SOC0 will convert pin A1
+//    AdcaRegs.ADCSOC4CTL.bit.CHSEL = 0x5;  //SOC0 will convert pin A2
+//
+//    AdcaRegs.ADCSOC3CTL.bit.ACQPS = acqps;    //sample window
+//    AdcaRegs.ADCSOC4CTL.bit.ACQPS = acqps;    //sample window
+//
+//    AdcaRegs.ADCSOC3CTL.bit.TRIGSEL = 0x9;//trigger on ePWM3 SOCA/C
+//    AdcaRegs.ADCSOC4CTL.bit.TRIGSEL = 0x9;//trigger on ePWM3 SOCA/C
 
 
 
@@ -1213,7 +1163,7 @@ void SetupADCEpwm2(void)
 //    SetupSOC(socC3, 5, acqps, 5); // SOC8 convierte ADC-C5 y hace trigger desde ePWM1(5) con una ventana de acqps
 //    SetupSOC(socD0, 0, acqps, 5); // SOC0 convierte ADC-D0 y hace trigger desde ePWM1(5) con una ventana de acqps
 
-    AdcaRegs.ADCINTSEL1N2.bit.INT1SEL = 0x4; //fin de SOCA3 genera INT1 flag
+    AdcaRegs.ADCINTSEL1N2.bit.INT1SEL = 0x2; //fin de SOCA3 genera INT1 flag
     AdcaRegs.ADCINTSEL1N2.bit.INT1E = 1;   //Habilita INT1 flag
     AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //limpia el bit de INT1 flag
     EDIS;
@@ -1515,6 +1465,12 @@ interrupt void adca1_isr2(void)
 //
 __interrupt void cla1Isr1 () // DCDC
 {
+    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //make sure INT1 flag is cleared
+    if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)
+    {
+        AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+    }
+    PieCtrlRegs.PIEACK.bit.ACK11 = 1; // all = (PIEACK_GROUP1 | PIEACK_GROUP11);
 
 ////----------------Control_DCDC---------------//
 ////-------------------------------------------//
@@ -1588,8 +1544,6 @@ __interrupt void cla1Isr1 () // DCDC
 //    EPwm11Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
 //    EPwm12Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
 
-
-
     if (contador_frecuencia < Fpwm_vf*t_inicio_rampa){
             frec_vf = f_min_vf;
             voltaje_vf = v_min_vf*sqrt_2;
@@ -1609,18 +1563,12 @@ __interrupt void cla1Isr1 () // DCDC
             frec_vf = f_min_vf;
             voltaje_vf = v_min_vf;
         }
+
 ////----------------Control_DCDC---------------//
 ////-------------------------------------------//
 ////--------------Control_Inversor-------------//
 ////-------------------------------------------//
 
-    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //make sure INT1 flag is cleared
-    if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)
-    {
-        AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
-        AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //Re-clear ADCINT flag
-    }
-    PieCtrlRegs.PIEACK.bit.ACK11 = 1; // all = (PIEACK_GROUP1 | PIEACK_GROUP11);
 
 }
 
