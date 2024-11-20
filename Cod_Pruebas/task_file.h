@@ -28,7 +28,7 @@ extern int16 PWM_CMPA_mod;
 //extern float Num,Den; //A/B user input at the C28x side
 //-------------------------------------------//
 //----------Controlador-de-voltaje_dcdc------//
-#define vdc_ref     100.0
+#define vdc_ref     600.0
 //#define MAX_ACT_v   480.0 // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define MAX_ACT_v    40.0    // es 160*3, ya que la corriente por pierna son 160A, pero el control de voltaje es para las 3 fases
 #define IMAX         40.0    // se usa para el control de corriente
@@ -40,14 +40,15 @@ extern int16 PWM_CMPA_mod;
 //#define PIAWU_N1_v  -0.0092
 //#define PIAWU_D1_v   1.0
 
+//controlador más rápido
 //#define KNO_v        0.0501
 //#define PIAWU_N1_v  -0.0398
 //#define PIAWU_D1_v   0.9980
 
+//controlador más lento
 #define KNO_v        0.0100
 #define PIAWU_N1_v  -0.0500
 #define PIAWU_D1_v   0.9995
-
 
 extern double x_v_l;
 extern double x_v_g;
@@ -108,7 +109,7 @@ extern float duty_vc;
 //#define m_iout    0.003663004
 #define m_i_2       0.1464
 #define n_i_2    -303.89
-#define N_vueltas   9.0
+#define N_vueltas   7.0
 //#define n_vg        350
 //#define n_iout      0.0
 

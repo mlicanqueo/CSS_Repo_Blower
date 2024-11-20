@@ -96,8 +96,8 @@
 
 // DCDC
 //#define PWM_TBPRD_inversor 1250
-#define PWM_TBPRD_dcdc 4160
-#define PWM_TBPRD_dcdc 1249 //modo up
+//#define PWM_TBPRD_dcdc 4160
+//#define PWM_TBPRD_dcdc 1249 //modo up
 #define PWM_TBPRD_dcdc 2500
 #define CMPA_dcdc      1000
 int16 CMPA_Boost_a;     //CMPA Boost pierna a
@@ -120,14 +120,20 @@ float n_volt;
 #define Inversor_phase1 (PWM_TBPRD_inversor/3.0)*3.0
 #define Inversor_phase2 (PWM_TBPRD_inversor/3.0)*2.0
 #define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*1.0
-#define t_inicio_rampa 5.0
-#define t_final_rampa 60.0
+//#define t_inicio_rampa 5.0
+//#define t_final_rampa 60.0
 //#define t_inicio_rampa 0.12
 //#define t_final_rampa  0.20
+#define t_inicio_rampa 10.0
+#define t_final_rampa 500.0
+
+
 
 #define f_min_vf  5.0
+#define f_max_vf  10.0       //frecuencia maxima a aplicar, para motor azul 7.5kw.
 //#define f_max_vf  62.0       //frecuencia maxima a aplicar, segun placa.
-#define f_max_vf  49.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
+//#define f_max_vf  49.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
+//#define f_max_vf  25.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
 #define v_min_vf   0.0
 #define v_max_vf 220.0      //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
 //#define v_max_vf 80.0       //voltaje de fase maximo a aplicara, en RMS.
@@ -322,6 +328,8 @@ void scia_echoback_init(void);
 void scia_fifo_init(void);
 void scia_xmit(int a);
 //-----------------------------------------------//
+extern void InitCpuTimers(void);
+
 //
 // Start of main
 //
@@ -336,7 +344,7 @@ void main(void)
     ClkCfgRegs.LOSPCP.bit.LSPCLKDIV = 0x1;
     EDIS;
 //
-// Step 2. enable PWM1 and PWM2 and their GPIOs
+// Step 2. enable PWM1 and PWM2 and their GPIO
 //
 //     InitGpio();
     // inicialización TX RX
@@ -590,6 +598,11 @@ EDIS;
         scia_fifo_init();       // Initialize the SCI FIFO
         scia_echoback_init();   // Initialize SCI for echoback
 
+// Configuración del temporizador
+//    InitCpuTimers();
+//    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Temporizador de 1 segundo
+
+
 //-----------Maquina-estados-prueba-boost-1-fase------------------//
         while(1)
         {
@@ -715,12 +728,13 @@ EDIS;
 ////                    estado = apagado;
 //                    contador_apagado = 0;
 //                }
-                    a = (uint16_t)(resultado [1]);   //v_low
-                    b = (uint16_t)(resultado [2]);   //vhigh
-                    c = (uint16_t)(resultado [0]);             //I_adc_1
-                    d = (uint16_t)(resultado [0]);   //
-                    e = (uint16_t)(resultado [8]);   //
-                    g = (uint16_t)(resultado [5]);             //
+
+                    a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+                    b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+                    c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+                    d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+                    e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+                    g = (uint16_t)(resultado [5]);   //ciclo de trabajo
 
                     scia_xmit(((a>>6))|(0x80));
                     scia_xmit(a&0x13F);
@@ -741,7 +755,7 @@ EDIS;
                     scia_xmit(g&0x13F);
 
 //                }
-                if (resultado [9] < 10.0)
+                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
                 {
                     estado = apagado;
                 }
@@ -766,7 +780,7 @@ EDIS;
                 EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
                 EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
 
-                if (resultado [6] < 5.0) //eso se agrega para que el dc-link se descargue en el motor, vhigh.
+                if (resultado [7] < 5.0) //(Si resultado [7] (V_high)) eso se agrega para que el dc-link se descargue en el motor, vhigh.
                 {
                     EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
                     EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
@@ -785,7 +799,7 @@ EDIS;
 //                EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
                 GPIO_WritePin(0, 0);                            // Precarga, C
 
-                if (resultado[9] > 10.0)
+                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
                 {
                     estado = idle;
                     x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
@@ -941,6 +955,7 @@ void EPWM_initEpwm(void)
     EPwm3Regs.CMPCTL.bit.LOADBMODE = CC_CTR_ZERO;
     // Setup compare
     EPwm3Regs.CMPA.bit.CMPA = PWM_TBPRD_dcdc/2;
+//    EPwm3Regs.CMPA.bit.CMPA = (1-0.47)*PWM_TBPRD_dcdc;
 
 //    EPwm3Regs.AQCTLA.bit.CAU = AQ_SET;            // Set PWM1A on ONE
 //    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;          // Set PWM1A on Zero
@@ -1474,7 +1489,6 @@ __interrupt void cla1Isr1 () // DCDC
 
 ////----------------Control_DCDC---------------//
 ////-------------------------------------------//
-
 //----------Controlador-de-voltaje-----------//
     if (i_count_l == 0)
     {
@@ -1505,8 +1519,10 @@ __interrupt void cla1Isr1 () // DCDC
                 x_v_l     = x_v_g;      // Guardado de variables controlador de voltaje
 //                EPwm4Regs.CMPA.bit.CMPA = x_i_g[i_count_l]*PWM_TBPRD_dcdc;
                 EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
-//                EPwm3Regs.CMPA.bit.CMPA = (1-0.7)*PWM_TBPRD_dcdc;
+/*                EPwm3Regs.CMPA.bit.CMPA = (1-0.47)*PWM_TBPRD_dcdc;*/
 //                EPwm3Regs.CMPB.bit.CMPB = contador_CMPB;
+//                EPwm3Regs.CMPB.bit.CMPB = 0.1*PWM_TBPRD_dcdc;
+//                EPwm3Regs.CMPA.bit.CMPA = (1-0.2)*PWM_TBPRD_dcdc;
             }
             break;
             case 1:

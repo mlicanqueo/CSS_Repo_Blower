@@ -336,7 +336,7 @@ void main(void)
     ClkCfgRegs.LOSPCP.bit.LSPCLKDIV = 0x1;
     EDIS;
 //
-// Step 2. enable PWM1 and PWM2 and their GPIOs
+// Step 2. enable PWM1 and PWM2 and their GPIO
 //
 //     InitGpio();
     // inicialización TX RX
@@ -696,12 +696,12 @@ EDIS;
 //                    contador_apagado = 0;
 //                }
 
-                    a = (uint16_t)(resultado [1]);   //v_low
-                    b = (uint16_t)(resultado [2]);   //vhigh
-                    c = (uint16_t)(resultado [0]);             //I_adc_1
-                    d = (uint16_t)(resultado [0]);   //
-                    e = (uint16_t)(resultado [8]);   //
-                    g = (uint16_t)(resultado [5]);             //
+                    a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+                    b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+                    c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+                    d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+                    e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+                    g = (uint16_t)(resultado [5]);   //ciclo de trabajo
 
                     scia_xmit(((a>>6))|(0x80));
                     scia_xmit(a&0x13F);
@@ -732,7 +732,7 @@ EDIS;
 //                    }
 
 //                }
-                if (resultado [0] < 10.0)
+                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
                 {
                     estado = apagado;
                 }
@@ -765,7 +765,7 @@ EDIS;
                 EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
                 GPIO_WritePin(0, 0);                            // Precarga, C
 
-                if (resultado[0] > 10.0)
+                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
                 {
                     estado = idle;
                     x_ant_v_l = 0;      // Guardado de variables controlador de voltaje

@@ -51,8 +51,7 @@ PAGE 0 :
    RAMD0             : origin = 0x00B000, length = 0x000800
    RAMD1             : origin = 0x00B800, length = 0x000800
 
- /*  RAMLS0_1          : origin = 0x008000, length = 0x001000 */
-   RAMLS0_1          : origin = 0x008000, length = 0x002000
+   RAMLS0_1          : origin = 0x008000, length = 0x001000
 
    RAMGS0_1          : origin = 0x00C000, length = 0x002000
 
@@ -86,7 +85,7 @@ PAGE 1 :
    CLA1_MSGRAMHIGH   : origin = 0x001500, length = 0x000080
 
    RAMLS2_3          : origin = 0x009000, length = 0x001000
-   RAMLS4_5          : origin = 0x00A000, length = 0x003000
+   RAMLS4_5          : origin = 0x00A000, length = 0x001000
 
    RAMGS2            : origin = 0x00E000, length = 0x001000
    RAMGS3_4          : origin = 0x00F000, length = 0x002000

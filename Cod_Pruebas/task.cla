@@ -74,6 +74,10 @@ __interrupt void Cla1Task1 (void)
     double a, b, delta, Imax_ref_dcm;
     double D_dcm, D_off_dcm, D_ccm;
     double Imax_bound;
+
+    int contador;
+    float CLAasin_delta;
+
 //-------------------------------------------//
 //-------------------------------------------//
 //-------------------------------------------//
@@ -85,6 +89,8 @@ __interrupt void Cla1Task1 (void)
 //    V_low  = 100;
 //    i_ref  = 60;
 //    Imax[i_count_l] = 50;
+
+//    V_low = 20;
 
     if (V_low < 10.0)
     {
@@ -187,15 +193,23 @@ __interrupt void Cla1Task1 (void)
     a = 3.0*L0 / (2.0*alpha);
     b = 3.0*Tpwm_dcdc*Vss*Iavg_ref_dcm / alpha;
     delta = (2*a*a*a - 27*b) / (2*a*a*a);
-    Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin(delta) / 3.0));
 
-//        int i = 0;
-//        __mdebugstop();
-//        fResult1 = CLAasin(fVal);
-//        for(i = 0; i < 8; ++i)
-//        {
-//            fResult1 = fResult1 + (-CLAsin(fResult1) + fVal) / CLAcos(fResult1);
-//        }
+//    delta = 1;
+
+    if((delta>0.95)&((delta <= 1))) // se realiza este cambio, ya que la función CLAasin(1) tiene error vs el asin(1).
+    {
+        CLAasin_delta = CLAasin(delta);
+        for (contador = 0; contador <10; ++contador)
+        {
+            CLAasin_delta = CLAasin_delta + (-CLAsin(CLAasin_delta) + delta) / CLAcos(CLAasin_delta);
+            Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin_delta / 3.0));
+        }
+    }
+    else
+    {
+        Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin(delta) / 3.0));
+    }
+
 
 ////////////////////////////////////////////////////
 // Calculo corriente máxima de frontera
@@ -350,25 +364,42 @@ __interrupt void Cla1Task1 (void)
         resultado [8] = x_i_g[0]*1000;
         resultado [9] = V_low;
 
-        resultado [0] = AdcaResultRegs.ADCRESULT0;
-        resultado [1] = AdcaResultRegs.ADCRESULT2;
-        resultado [2] = AdcaResultRegs.ADCRESULT1;
+        resultado [0] = AdcaResultRegs.ADCRESULT0;  //I_1
+        resultado [1] = AdcaResultRegs.ADCRESULT2;  //V_low
+        resultado [2] = AdcaResultRegs.ADCRESULT1;  //V_High
+//        resultado [3] = AdcaResultRegs.ADCRESULT3;  //I_2
+//        resultado [4] = AdcaResultRegs.ADCRESULT4;  //I_3
+        resultado [5] = x_i_g[0]*1000;  //Ciclo de trabajo
+        resultado [6] = V_low;  //V_low_valor
+        resultado [7] = V_high;  //V_high_valor
 
-        resultado [4] = V_high;
-        resultado [5] = Imax_bound;
-        resultado [6] = Imax_ref_dcm;
-        resultado [7] = Imax_ref_ccm_newton;
-        resultado [8] = D_dcm;
-        resultado [9] = D_ccm;
-        resultado [10] = D_off_dcm;
-        resultado [11] = CLAasin(delta) / 3.0;
-        resultado [12] = CLAsin ( CLAasin(delta) / 3.0);
-        resultado [13] = delta;
-        resultado [10] = CLAasin(1.1);
-        resultado [11] = CLAasin(0.7);
-        resultado [12] = CLAasin(0.8);
-        resultado [13] = CLAasin(0.9);
-        resultado [14] = CLAasin(1.0);
+//        resultado [4] = V_high;
+//        resultado [5] = Imax_bound;
+//        resultado [6] = Imax_ref_dcm;
+//        resultado [7] = Imax_ref_ccm_newton;
+//        resultado [8] = D_dcm;
+//        resultado [9] = D_ccm;
+//        resultado [10] = D_off_dcm;
+//        resultado [11] = CLAasin(delta) / 3.0;
+//        resultado [12] = CLAsin ( CLAasin(delta) / 3.0);
+////        resultado [13] = delta;
+//        resultado [10] = CLAasin(1.1);
+//        resultado [11] = CLAasin(0.7);
+//        resultado [12] = CLAasin(0.8);
+//        resultado [13] = CLAasin_delta;
+////        resultado [13] = CLAasin(1.0);
+//        resultado [14] = CLAasin(1.0);
+
+        //        int i = 0;
+        //        __mdebugstop();
+        //        fResult1 = CLAasin(fVal);
+        //        for(i = 0; i < 8; ++i)
+        //        {
+        //            fResult1 = fResult1 + (-CLAsin(fResult1) + fVal) / CLAcos(fResult1);
+        //        }
+
+
+
 
 
 //        resultado [3] = AdcaResultRegs.ADCRESULT3;

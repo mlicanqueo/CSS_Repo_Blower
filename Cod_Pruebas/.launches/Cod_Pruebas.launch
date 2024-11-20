@@ -5,6 +5,7 @@
         <mapEntry key="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser@#$Texas Instruments XDS100v2 USB Debug Probe_0/C28xx_CPU1@#$1" value="16-Bit UnSigned Int"/>
         <mapEntry key="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser@#$Texas Instruments XDS100v2 USB Debug Probe_0/C28xx_CPU1@#$2" value="16-Bit Hex - TI Style"/>
         <mapEntry key="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser@#$Texas Instruments XDS100v2 USB Debug Probe_0/C28xx_CPU1@#$3" value="16-Bit Signed Int"/>
+        <mapEntry key="org.eclipse.debug.ui.MemoryView@#$Texas Instruments XDS100v2 USB Debug Probe_0/C28xx_CPU1@#$0" value="16-Bit Hex - TI Style"/>
     </mapAttribute>
     <mapAttribute key="ccs.memoryview.pageexpr">
         <mapEntry key="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser@#$Texas Instruments XDS100v2 USB Debug Probe_0/C28xx_CPU1" value="Peripheral@@0x00011000"/>
