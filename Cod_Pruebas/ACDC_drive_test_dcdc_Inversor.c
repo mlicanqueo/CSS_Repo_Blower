@@ -75,6 +75,9 @@
 //    SetupSOC(socC2, 4, acqps, 5); // SOC8 convierte ADC-C4 y hace trigger desde ePWM1(5) con una ventana de acqps
 //    SetupSOC(socC3, 5, acqps, 5); // SOC8 convierte ADC-C5 y hace trigger desde ePWM1(5) con una ventana de acqps
 
+float V_low_adc, V_high_adc, i_in_1_adc;
+
+
 #define PWM_TBPRD 1250 // Frecuencia de 2500 hz
 #define PWM_CMPA 625  // Frecuencia 2500 hz
 //#define PWM_TBPRD 31250 // Frecuencia de 100 hz
@@ -110,35 +113,49 @@ int16 CMPA_Boost_c;     //CMPA Boost pierna c
 // inversor
 //float contador_frecuencia;
 long contador_frecuencia;
-long contador_apagado, contador_apagado2;
+//long contador_apagado, contador_apagado2;
 float m_frec;
 float m_volt;
 float n_frec;
 float n_volt;
 #define PWM_TBPRD_inversor 1250
 //#define PWM_TBPRD_inversor 625
-#define Inversor_phase1 (PWM_TBPRD_inversor/3.0)*3.0
-#define Inversor_phase2 (PWM_TBPRD_inversor/3.0)*2.0
-#define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*1.0
-//#define t_inicio_rampa 5.0
-//#define t_final_rampa 60.0
+//----------------------------------------------//
+// El desfase se realiza por codigo, no modificar.
+#define Inversor_phase1 (PWM_TBPRD_inversor/3.0)*0.0
+#define Inversor_phase2 (PWM_TBPRD_inversor/3.0)*0.0
+#define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*0.0
+// El desfase se realiza por codigo, no modificar.
+//----------------------------------------------//
+#define t_inicio_rampa 5.0
+#define t_final_rampa 20.0
+
 //#define t_inicio_rampa 0.12
 //#define t_final_rampa  0.20
-#define t_inicio_rampa 10.0
-#define t_final_rampa 500.0
+//#define t_inicio_rampa 10.0
+//#define t_final_rampa 500.0
 
 
 
-#define f_min_vf  5.0
-#define f_max_vf  10.0       //frecuencia maxima a aplicar, para motor azul 7.5kw.
+//#define f_min_vf  5.0
+//#define f_max_vf  10.0       //frecuencia maxima a aplicar, para motor azul 7.5kw.
 //#define f_max_vf  62.0       //frecuencia maxima a aplicar, segun placa.
 //#define f_max_vf  49.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
 //#define f_max_vf  25.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
-#define v_min_vf   0.0
-#define v_max_vf 220.0      //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
+//#define v_min_vf   0.0
+//#define v_max_vf 220.0      //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
 //#define v_max_vf 80.0       //voltaje de fase maximo a aplicara, en RMS.
 //#define v_max_vf 280.0      //voltaje de fase maximo a aplicara, en RMS, para blower AC.
 //#define v_max_vf 113.0      //voltaje de fase a aplicara, en RMS, para blower AC, a 1000RPM, 33HZ.
+//------------Parametros Motor chico azul------------//
+#define f_min_vf   5.0       //frecuencia minima a aplicar, para motor chico 0.5kW.
+#define f_max_vf  10.0       //frecuencia maxima a aplicar, para motor chico 0.5kW.
+#define v_min_vf  22.0       //voltaje de fase minimo a aplicara, en RMS, para motor chico 0.5kW.
+#define v_max_vf  44.0       //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
+//#define v_max_vf 220.0       //voltaje de fase maximo a aplicara, en RMS, para motor chico 0.5kW.
+//---------------------------------------------------//
+
+
 //#define PHASE3 20834  // Frecuencia 100 hz
 
 //#define PWM_TBPRD 97656 // Frecuencia de 2khz
@@ -165,6 +182,9 @@ int16 PWM_CMPA_mod = 0;
 long double asdf = 2;
 float ct1, ct2, delta_2;
 int ct3,ct4, delta_3;
+
+
+
 
 int16 a1;
 int16 b1;
@@ -556,8 +576,8 @@ EDIS;
     n_volt = (v_max_vf-t_final_rampa*Fpwm_vf*m_volt);
 
 
-    contador_apagado = 0;
-    contador_apagado2 = 0;
+//    contador_apagado = 0;
+//    contador_apagado2 = 0;
 
 //------------------------------------------//
 //
@@ -599,13 +619,40 @@ EDIS;
         scia_echoback_init();   // Initialize SCI for echoback
 
 // Configuración del temporizador
-//    InitCpuTimers();
-//    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Temporizador de 1 segundo
+    InitCpuTimers();                           // Inicializa los temporizadores
+//    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Configura el temporizador a 5 segundos (5,000,000 µs)
+
+    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Temporizador de 1 segundos
+
+
+//Condiciones iniciales
+    EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
+    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM3A on Zero
+    EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
+    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
+    EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
+    EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
+    EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
+    EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
+
+    EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;           // Set PWM8A on Zero
+    EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;           // Set PWMBA on Zero
+    EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM11A on Zero
+    EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM11B on Zero
+    EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM12A on Zero
+    EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
+//Condiciones iniciales
+    //    float ct1, ct2, delta_2;
+//        ct1 = 5;
+//        ct2 = ct1;
+//        delta_2 = socA1;
+//        ct3 = IMAX;
+//        ct4 = (int) vdc_ref2;
 
 
 //-----------Maquina-estados-prueba-boost-1-fase------------------//
-        while(1)
-        {
+while(1)
+{
 
 //            // Turn on LED
 //            //
@@ -627,218 +674,224 @@ EDIS;
 
             //asdasdasd
 //---- maquina de estados con 1 boton-----///
-        switch (estado)
-        {
-            case idle:
-                {
-//                    EPwm3Regs.AQCTLA.bit.PRD = AQ_CLEAR;            // Set PWM1A on Zero
-//                    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM1A on Zero
-//                    EPwm3Regs.AQCTLB.bit.PRD = AQ_CLEAR;            // Set PWM1B on Zero
-//                    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM1B on Zero
-
-                    EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
-                    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM3A on Zero
-                    EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
-                    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
-                    EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
-                    EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
-                    EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
-                    EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
-
-                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;           // Set PWM8A on Zero
-                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;           // Set PWMBA on Zero
-                    EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM11A on Zero
-                    EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM11B on Zero
-                    EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM12A on Zero
-                    EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
-//                    GPIO_WritePin(0, 0);        //Precarga, C
-//                    DELAY_US(1000*2000);
-//                    estado = normal_mode;
-
-                    if (1){
-//                        DELAY_US(1000*5000);
-//                        GPIO_WritePin(0, 1);        //Precarga, C
-//                        DELAY_US(1000*10000);
-                        estado = normal_mode;
-                        EALLOW;
-                        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK1 = 1;
-//                        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK4 = 1;
-                        EDIS;
-//                        if (v_input - v_dclink < 20)
-//                            {
-//        //                        estado = normal_mode;
-//                                EPwm8Regs.AQCTLA.bit.CAU  = AQ_SET;           // Set PWM8A on Zero
-//                                EPwm8Regs.AQCTLB.bit.CAD  = AQ_SET;           // Set PWMBA on Zero
-//                                EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM11A on Zero
-//                                EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM11B on Zero
-//                                EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM12A on Zero
-//                                EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM12B on Zero
-//                                EALLOW;
-//        //                        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK4 = 1;
-//                                EDIS;
-//                                GPIO_WritePin(0, 1);        //Precarga
-//                                GPIO_WritePin(1, 1);        //Aux
-//                            }
-                    }
-
-                    EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM3A on Zero
-                    EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
-                    EPwm3Regs.AQCTLB.bit.CAU = AQ_SET  ;          // Set PWM3B on Zero
-                    EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
-
-//                    // descomentar cuando se active el interleaved.
-//
-//                    EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM4A on Zero
-//                    EPwm4Regs.AQCTLA.bit.CAD = AQ_CLEAR;          // Set PWM4A on Zero
-//                    EPwm4Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM4B on ONE
-//                    EPwm4Regs.AQCTLB.bit.CAD = AQ_SET;            // Set PWM4B on ONE
-//
-//                    EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM7A on Zero
-//                    EPwm7Regs.AQCTLA.bit.CAD = AQ_CLEAR;          // Set PWM7A on Zero
-//                    EPwm7Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM7B on ONE
-//                    EPwm7Regs.AQCTLB.bit.CAD = AQ_SET;            // Set PWM7B on ONE
-
-//                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_SET;           // Set PWM8A on Zero
-//                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_SET;           // Set PWMBA on Zero
-//                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM11A on Zero
-//                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM11B on Zero
-//                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM12A on Zero
-//                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM12B on Zero
-
-                    EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
-                    EPwm8Regs.AQCTLA.bit.CAD =  AQ_CLEAR;
-                    EPwm8Regs.AQCTLB.bit.CAU =  AQ_CLEAR;            // Set PWM1B on Zero
-                    EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
-                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
-                    EPwm11Regs.AQCTLA.bit.CAD = AQ_CLEAR;
-                    EPwm11Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
-                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
-                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
-                    EPwm12Regs.AQCTLA.bit.CAD = AQ_CLEAR;
-                    EPwm12Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
-                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
-                }
-            break;
-            case normal_mode:
-////                if (contador_apagado < 260000000){          // aprox 1 minuto
-//                if (contador_apagado < 70000){          //
-//                    contador_apagado = contador_apagado + 1;
-//                }
-//                else {
-////                    estado = apagado;
-//                    contador_apagado = 0;
-//                }
-
-                    a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
-                    b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
-                    c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
-                    d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
-                    e = (uint16_t)(resultado [5]);   //ciclo de trabajo
-                    g = (uint16_t)(resultado [5]);   //ciclo de trabajo
-
-                    scia_xmit(((a>>6))|(0x80));
-                    scia_xmit(a&0x13F);
-
-                    scia_xmit(((b>>6))&(0x13F));
-                    scia_xmit(b&0x13F);
-
-                    scia_xmit(((c>>6))&(0x13F));
-                    scia_xmit(c&0x13F);
-
-                    scia_xmit(((d>>6))&(0x13F));
-                    scia_xmit(d&0x13F);
-
-                    scia_xmit(((e>>6))&(0x13F));
-                    scia_xmit(e&0x13F);
-
-                    scia_xmit(((g>>6))&(0x13F));
-                    scia_xmit(g&0x13F);
-
-//                }
-                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
-                {
-                    estado = apagado;
-                }
-
-                if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)    // Revisa si ocurrió overflow
-                {
-                    AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
-                    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //Re-clear ADCINT flag
-                }
-                PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
-            break;
-            case apagado:
-                EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
-                EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
-                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
-                EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
-                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
-
-
-                EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
-                EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
-                EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
-                EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
-
-                if (resultado [7] < 5.0) //(Si resultado [7] (V_high)) eso se agrega para que el dc-link se descargue en el motor, vhigh.
-                {
-                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
-                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
-                    EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
-                    EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;
-                    EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
-                    EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;
-                }
-
-
-//                EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;           // Set PWM8A on Zero
-//                EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;           // Set PWMBA on Zero
-//                EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM11A on Zero
-//                EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM11B on Zero
-//                EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM12A on Zero
-//                EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
-                GPIO_WritePin(0, 0);                            // Precarga, C
-
-                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
-                {
-                    estado = idle;
-                    x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
-                    x_v_l     = 0;      // Guardado de variables controlador de voltaje
-
-                }
-
-                //                EPwm8Regs.TBCTL.bit.CTRMODE = TB_FREEZE;
-//                if (GpioDataRegs.GPBDAT.bit.GPIO35 == 0)
-//                {
-//                    estado = idle;
-//                }
-            break;
-        }
-            ///--- maquina de estados con 2 botones ////
 //        switch (estado)
 //        {
 //            case idle:
-//                if (GpioDataRegs.GPBDAT.bit.GPIO35)
 //                {
-//                    EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM1A on Zero
-//                    EPwm3Regs.AQCTLA.bit.CAD = AQ_SET;            // Set PWM1A on Zero
-//                    EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
-//                    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM1B on Zero
+////                    EPwm3Regs.AQCTLA.bit.PRD = AQ_CLEAR;            // Set PWM1A on Zero
+////                    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM1A on Zero
+////                    EPwm3Regs.AQCTLB.bit.PRD = AQ_CLEAR;            // Set PWM1B on Zero
+////                    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM1B on Zero
 //
-//                    EPwm3Regs.TBCTL.bit.CTRMODE = TB_COUNT_UPDOWN;
+////                    EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
+////                    EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM3A on Zero
+////                    EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
+////                    EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
+////                    EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
+////                    EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
+////                    EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
+////                    EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
+////
+////                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;           // Set PWM8A on Zero
+////                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;           // Set PWMBA on Zero
+////                    EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM11A on Zero
+////                    EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM11B on Zero
+////                    EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;           // Set PWM12A on Zero
+////                    EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;           // Set PWM12B on Zero
 //
-//                }
-//                else
-//                {
-//                    estado = normal_mode;
-//                    DELAY_US(1000*500);
+////                    GPIO_WritePin(0, 0);        //Precarga, C
+////                    DELAY_US(1000*2000);
+////                    estado = normal_mode;
+//                    EALLOW;
+//                    DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK1 = 1;
+////                        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK4 = 1;
+//                    EDIS;
+////                    if ((resultado [6] > 20.0)){
+//                    if (1){
+//
+////                        DELAY_US(1000*5000);
+////                        GPIO_WritePin(0, 1);        //Precarga, C
+////                        DELAY_US(1000*10000);
+//                        estado = normal_mode;
+//
+////                        if (v_input - v_dclink < 20)
+////                            {
+////        //                        estado = normal_mode;
+////                                EPwm8Regs.AQCTLA.bit.CAU  = AQ_SET;           // Set PWM8A on Zero
+////                                EPwm8Regs.AQCTLB.bit.CAD  = AQ_SET;           // Set PWMBA on Zero
+////                                EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM11A on Zero
+////                                EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM11B on Zero
+////                                EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM12A on Zero
+////                                EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM12B on Zero
+////                                EALLOW;
+////        //                        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK4 = 1;
+////                                EDIS;
+////                                GPIO_WritePin(0, 1);        //Precarga
+////                                GPIO_WritePin(1, 1);        //Aux
+////                            }
+//                        EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM3A on Zero
+//                        EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
+//                        EPwm3Regs.AQCTLB.bit.CAU = AQ_SET  ;          // Set PWM3B on Zero
+//                        EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
+//                    }
+//
+//
+//
+////                    // descomentar cuando se active el interleaved.
+////
+////                    EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM4A on Zero
+////                    EPwm4Regs.AQCTLA.bit.CAD = AQ_CLEAR;          // Set PWM4A on Zero
+////                    EPwm4Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM4B on ONE
+////                    EPwm4Regs.AQCTLB.bit.CAD = AQ_SET;            // Set PWM4B on ONE
+////
+////                    EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM7A on Zero
+////                    EPwm7Regs.AQCTLA.bit.CAD = AQ_CLEAR;          // Set PWM7A on Zero
+////                    EPwm7Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM7B on ONE
+////                    EPwm7Regs.AQCTLB.bit.CAD = AQ_SET;            // Set PWM7B on ONE
+//
+////                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_SET;           // Set PWM8A on Zero
+////                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_SET;           // Set PWMBA on Zero
+////                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM11A on Zero
+////                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM11B on Zero
+////                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;           // Set PWM12A on Zero
+////                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;           // Set PWM12B on Zero
+//
+////                    EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+////                    EPwm8Regs.AQCTLA.bit.CAD =  AQ_CLEAR;
+////                    EPwm8Regs.AQCTLB.bit.CAU =  AQ_CLEAR;            // Set PWM1B on Zero
+////                    EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+////                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+////                    EPwm11Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+////                    EPwm11Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+////                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+////                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+////                    EPwm12Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+////                    EPwm12Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+////                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
 //                }
 //            break;
 //            case normal_mode:
-//                if (GpioDataRegs.GPBDAT.bit.GPIO60 == 0x0)
+//////                if (contador_apagado < 260000000){          // aprox 1 minuto
+////                if (contador_apagado < 70000){          //
+////                    contador_apagado = contador_apagado + 1;
+////                }
+////                else {
+//////                    estado = apagado;
+////                    contador_apagado = 0;
+////                }
+//
+//                    a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+//                    b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+//                    c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+//                    d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+//                    e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+//                    g = (uint16_t)(resultado [5]);   //ciclo de trabajo
+//
+//                    scia_xmit(((a>>6))|(0x80));
+//                    scia_xmit(a&0x13F);
+//
+//                    scia_xmit(((b>>6))&(0x13F));
+//                    scia_xmit(b&0x13F);
+//
+//                    scia_xmit(((c>>6))&(0x13F));
+//                    scia_xmit(c&0x13F);
+//
+//                    scia_xmit(((d>>6))&(0x13F));
+//                    scia_xmit(d&0x13F);
+//
+//                    scia_xmit(((e>>6))&(0x13F));
+//                    scia_xmit(e&0x13F);
+//
+//                    scia_xmit(((g>>6))&(0x13F));
+//                    scia_xmit(g&0x13F);
+//
+////                if ((CpuTimer0Regs.TCR.bit.TSS == 1)) // si resultado [7] (v_High) entre 0.9 y 1.1 vdc_ref)
+//                if ((resultado [7] > 0.9*vdc_ref)&&(resultado [7] < 1.1*vdc_ref)&&(CpuTimer0Regs.TCR.bit.TSS == 1)) // si resultado [7] (v_High) entre 0.9 y 1.1 vdc_ref)
 //                {
-//                    estado = apagado;
+//                    CpuTimer0Regs.TCR.bit.TSS = 0;             // Inicia el temporizador
 //                }
+//                else if (CpuTimer0Regs.TCR.bit.TIF == 1)
+//                {
+//                    CpuTimer0Regs.TCR.bit.TIF = 1;     // Limpia la bandera del temporizador
+//                    CpuTimer0Regs.TCR.bit.TSS = 1;    // Detén el temporizador si no necesitas reutilizarlo
+////                    estado = dcdc_inversor;
+//
+//                    EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+//                    EPwm8Regs.AQCTLA.bit.CAD =  AQ_CLEAR;
+//                    EPwm8Regs.AQCTLB.bit.CAU =  AQ_CLEAR;            // Set PWM1B on Zero
+//                    EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+//                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+//                    EPwm11Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+//                    EPwm11Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+//                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+//                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+//                    EPwm12Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+//                    EPwm12Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+//                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
+//                    contador_frecuencia = 0;
+//                    contador_l = 0;
+//                }
+//
+//
+//                if (resultado [6] < 15.0) // si resultado [6] (v_low) menor a 15)
+//                {
+////                    estado = apagado;
+//                }
+//
+//                if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)    // Revisa si ocurrió overflow
+//                {
+//                    AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+//                    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //Re-clear ADCINT flag
+//                }
+//                PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
+//
+//                                    estado = dcdc_inversor;
+//                                    EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+//                                    EPwm8Regs.AQCTLA.bit.CAD =  AQ_CLEAR;
+//                                    EPwm8Regs.AQCTLB.bit.CAU =  AQ_CLEAR;            // Set PWM1B on Zero
+//                                    EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+//                                    EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+//                                    EPwm11Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+//                                    EPwm11Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+//                                    EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+//                                    EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+//                                    EPwm12Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+//                                    EPwm12Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
+//                                    EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
+//            break;
+//
+//            case dcdc_inversor:
+//                a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+//                b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+//                c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+//                d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+//                e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+//                g = (uint16_t)(resultado [5]);   //ciclo de trabajo
+//
+//                scia_xmit(((a>>6))|(0x80));
+//                scia_xmit(a&0x13F);
+//
+//                scia_xmit(((b>>6))&(0x13F));
+//                scia_xmit(b&0x13F);
+//
+//                scia_xmit(((c>>6))&(0x13F));
+//                scia_xmit(c&0x13F);
+//
+//                scia_xmit(((d>>6))&(0x13F));
+//                scia_xmit(d&0x13F);
+//
+//                scia_xmit(((e>>6))&(0x13F));
+//                scia_xmit(e&0x13F);
+//
+//                scia_xmit(((g>>6))&(0x13F));
+//                scia_xmit(g&0x13F);
+//
+//                if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
+//                {
+////                    DELAY_US(1000000);
+////                    estado = apagado;
+//                }
+//
 //                if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)    // Revisa si ocurrió overflow
 //                {
 //                    AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
@@ -846,19 +899,262 @@ EDIS;
 //                }
 //                PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
 //            break;
-//            case apagado:
-//                EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM1A on Zero
-//                EPwm3Regs.AQCTLA.bit.CAD = AQ_CLEAR;            // Set PWM1A on Zero
-//                EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM1B on Zero
-//                EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM1B on Zero
 //
-////                EPwm3Regs.TBCTL.bit.CTRMODE = TB_FREEZE;
-//                if (GpioDataRegs.GPBDAT.bit.GPIO35 == 0)
+//            case apagado:
+//                EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
+//                EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
+//                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
+//                EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
+//                EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
+//                EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
+//                EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
+//                EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
+//                EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
+//
+////                EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+////                EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+////                EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+////                EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+////                EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+////                EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
+//                DELAY_US(1000000);
+//                if (resultado [7] < 5.0) //(Si resultado [7] (V_high)) eso se agrega para que el dc-link se descargue en el motor, vhigh.
 //                {
-//                    estado = idle;
+//                    EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
+//                    EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
+//                    EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+//                    EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+//                    EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+//                    EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+////                    DELAY_US(1000*100000);
 //                }
+//
+//                if ((resultado [6] > 10.0)&&(EPwm8Regs.AQCTLA.bit.CAU == 1)) // si resultado [6] (v_low) menor a 10)
+//                {
+////                    estado = idle;
+//                    x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
+//                    x_v_l     = 0;      // Guardado de variables controlador de voltaje
+//                }
+//
+//                if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)    // Revisa si ocurrió overflow
+//                {
+//                    AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+//                    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //Re-clear ADCINT flag
+//                }
+//                PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
+//
+//                GPIO_WritePin(0, 0);                            // Precarga, C
+//
+////                if (resultado [6] > 10.0) // si resultado [6] (v_low) menor a 10)
+////                {
+////                    estado = idle;
+////                    x_ant_v_l = 0;      // Guardado de variables controlador de voltaje
+////                    x_v_l     = 0;      // Guardado de variables controlador de voltaje
+////
+////                }
 //            break;
 //        }
+
+//----------------Maquina_estados_prueba_1_inductor----------------------//
+//----------------Maquina_estados_prueba_1_inductor----------------------//
+
+    switch (estado)
+    {
+    case idle:
+        EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM3A on Zero
+        EPwm3Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM3B on Zero
+        EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
+        EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;            // Set PWM3B on Zero
+        EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;            // Set PWM3B on ONE
+        EPwm4Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM4A on Zero
+        EPwm4Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM4B on Zero
+        EPwm7Regs.AQCTLA.bit.CAU = AQ_CLEAR;            // Set PWM7A on Zero
+        EPwm7Regs.AQCTLB.bit.CAD = AQ_CLEAR;            // Set PWM7B on Zero
+
+        EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
+        EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
+        EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+        EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+        EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+        EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+
+        EALLOW;
+        DmaClaSrcSelRegs.CLA1TASKSRCSEL1.bit.TASK1 = 1;
+        EDIS;
+
+        if ((V_low_adc > 0.1*vdc_ref)&&(CpuTimer0Regs.TCR.bit.TSS == 1)){       // si V_low mayor a 0.1 vdc_ref y timer de X seg.
+            CpuTimer0Regs.TCR.bit.TSS = 0;             // Inicia el temporizador
+        }
+        else if ((V_low_adc > 0.1*vdc_ref)&&(CpuTimer0Regs.TCR.bit.TIF == 1)){
+            CpuTimer0Regs.TCR.bit.TIF = 1;     // Limpia la bandera del temporizador
+            CpuTimer0Regs.TCR.bit.TSS = 1;    // Detén el temporizador si no necesitas reutilizarlo
+
+            estado = normal_mode;
+    //        EPwm3Regs.AQCTLB.bit.CAU = AQ_SET  ;          // Set PWM3B on Zero
+            EPwm3Regs.AQCTLA.bit.CAU = AQ_CLEAR;          // Set PWM3A on Zero
+            EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
+            EPwm3Regs.AQCTLB.bit.CAU = AQ_SET  ;          // Set PWM3B on Zero
+            EPwm3Regs.AQCTLB.bit.ZRO = AQ_CLEAR;          // Set PWM3B on ONE
+
+        }
+    break;
+
+    case normal_mode:
+        a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+        b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+        c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+        d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+        e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+        g = (uint16_t)(resultado [5]);   //ciclo de trabajo
+
+        scia_xmit(((a>>6))|(0x80));
+        scia_xmit(a&0x13F);
+
+        scia_xmit(((b>>6))&(0x13F));
+        scia_xmit(b&0x13F);
+
+        scia_xmit(((c>>6))&(0x13F));
+        scia_xmit(c&0x13F);
+
+        scia_xmit(((d>>6))&(0x13F));
+        scia_xmit(d&0x13F);
+
+        scia_xmit(((e>>6))&(0x13F));
+        scia_xmit(e&0x13F);
+
+        scia_xmit(((g>>6))&(0x13F));
+        scia_xmit(g&0x13F);
+
+    //                if ((CpuTimer0Regs.TCR.bit.TSS == 1)) // si resultado [7] (v_High) entre 0.9 y 1.1 vdc_ref)
+        if ((V_high_adc > 0.9*vdc_ref)&&(V_high_adc < 1.1*vdc_ref)&&(CpuTimer0Regs.TCR.bit.TSS == 1)) // si V_high_adc entre 0.9 y 1.1 vdc_ref y el timer está en 0.
+        {
+            CpuTimer0Regs.TCR.bit.TSS = 0;             // Inicia el temporizador
+        }
+        else if ((V_high_adc > 0.9*vdc_ref)&&(V_high_adc < 1.1*vdc_ref)&&(CpuTimer0Regs.TCR.bit.TIF == 1)) //si V_high_adc entre 0.9 y 1.1 vdc_ref y el timer está en Xseg.
+        {
+            CpuTimer0Regs.TCR.bit.TIF = 1;     // Limpia la bandera del temporizador
+            CpuTimer0Regs.TCR.bit.TSS = 1;    // Detén el temporizador si no necesitas reutilizarlo
+            estado = dcdc_inversor;
+
+            EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+            EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+            EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+            EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+            EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+            EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
+            contador_frecuencia = 0;
+            contador_l = 0;
+        }
+
+        if (V_low_adc < 0.1*vdc_ref){ // si V_low_adc menor a 0.1*vdc_ref)
+//            estado = apagado;
+            EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM3B on Zero
+            EPwm8Regs.AQCTLA.bit.CAU =  AQ_SET;              // Set PWM1A on Zero
+            EPwm8Regs.AQCTLB.bit.CAD =  AQ_SET;
+            EPwm11Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+            EPwm11Regs.AQCTLB.bit.CAD = AQ_SET;
+            EPwm12Regs.AQCTLA.bit.CAU = AQ_SET;              // Set PWM1A on Zero
+            EPwm12Regs.AQCTLB.bit.CAD = AQ_SET;
+        }
+
+        if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1){
+            AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+        }
+    EALLOW;
+        Cla1Regs.MICLR.bit.INT1 = 1;
+        if (Cla1Regs.MIOVF.bit.INT1 == 1){
+            Cla1Regs.MICLROVF.bit.INT1 = 1;
+        }
+    EDIS;
+        PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);      //permite que se generen nuevas interrupciones.
+    break;
+
+    case dcdc_inversor:
+        a = (uint16_t)(resultado [1]);   //v_low cuentas ADC
+        b = (uint16_t)(resultado [2]);   //vhigh cuentas ADC
+        c = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+        d = (uint16_t)(resultado [0]);   //I_adc_1 cuentas ADC
+        e = (uint16_t)(resultado [5]);   //ciclo de trabajo
+        g = (uint16_t)(resultado [5]);   //ciclo de trabajo
+
+        scia_xmit(((a>>6))|(0x80));
+        scia_xmit(a&0x13F);
+
+        scia_xmit(((b>>6))&(0x13F));
+        scia_xmit(b&0x13F);
+
+        scia_xmit(((c>>6))&(0x13F));
+        scia_xmit(c&0x13F);
+
+        scia_xmit(((d>>6))&(0x13F));
+        scia_xmit(d&0x13F);
+
+        scia_xmit(((e>>6))&(0x13F));
+        scia_xmit(e&0x13F);
+
+        scia_xmit(((g>>6))&(0x13F));
+        scia_xmit(g&0x13F);
+
+        if (V_low_adc < 0.1*vdc_ref) // si V_low_adc menor a 0.1*vdc_ref)
+//            estado = apagado;
+        {
+              EPwm3Regs.AQCTLB.bit.CAU = AQ_CLEAR;          // Set PWM3B on Zero
+        }
+    //    if (resultado [6] < 10.0) // si resultado [6] (v_low) menor a 10)
+    //    {
+    //        DELAY_US(1000000);
+    //        estado = apagado;
+    //    }
+        if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1){
+            AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+        }
+    EALLOW;
+        Cla1Regs.MICLR.bit.INT1 = 1;
+        if (Cla1Regs.MIOVF.bit.INT1 == 1){
+            Cla1Regs.MICLROVF.bit.INT1 = 1;
+        }
+    EDIS;
+        PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);      //permite que se generen nuevas interrupciones.
+    break;
+
+    case apagado:
+
+        if ((V_high_adc < 10.0)&&(CpuTimer0Regs.TCR.bit.TSS == 1)){   //(Si V_high_adc < 10V) y timer 5 seg. Descarga dc-link en el motor.
+
+            CpuTimer0Regs.TCR.bit.TSS = 0;             // Inicia el temporizador
+        }
+        else if ((V_high_adc < 10.0)&&(CpuTimer0Regs.TCR.bit.TIF == 1)){
+            CpuTimer0Regs.TCR.bit.TIF = 1;     // Limpia la bandera del temporizador
+            CpuTimer0Regs.TCR.bit.TSS = 1;    // Detén el temporizador si no necesitas reutilizarlo
+
+            estado = idle;
+            x_ant_v_l = 0;      // Reinicio de variables controlador de voltaje
+            x_v_l     = 0;      // Reinicio de variables controlador de voltaje
+
+            EPwm8Regs.AQCTLA.bit.CAU  = AQ_CLEAR;              // Set PWM1A on Zero
+            EPwm8Regs.AQCTLB.bit.CAD  = AQ_CLEAR;
+            EPwm11Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+            EPwm11Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+            EPwm12Regs.AQCTLA.bit.CAU = AQ_CLEAR;              // Set PWM1A on Zero
+            EPwm12Regs.AQCTLB.bit.CAD = AQ_CLEAR;
+        }
+        if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1){
+            AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
+        }
+    EALLOW;
+        Cla1Regs.MICLR.bit.INT1 = 1;
+        if (Cla1Regs.MIOVF.bit.INT1 == 1){
+            Cla1Regs.MICLROVF.bit.INT1 = 1;
+        }
+    EDIS;
+        PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);      //permite que se generen nuevas interrupciones.
+    break;
+    }
+
+//----------------Maquina_estados_prueba_1_inductor----------------------//
+//----------------Maquina_estados_prueba_1_inductor----------------------//
+
+            ///--- maquina de estados con 2 botones ////
 }
 }
 //-----------Maquina-estados-prueba-boost-3-fases-----------------//
@@ -1457,6 +1753,12 @@ void corrimiento_izq(float v1){
 interrupt void adca1_isr2(void)
 {
 
+//    V_low_adc  = ((float)(AdcaResultRegs.ADCRESULT2))*m_vdc+n_vdc;                         // Curva para ADC-AX, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//    V_high_adc = ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;                         // Curva para ADC-AX, Voltaje entre   0-1000V,  de 0 a 3.3V |
+//    i_in_1_adc = ((float)(AdcaResultRegs.ADCRESULT3))*m_i_2/N_vueltas + n_i_2/N_vueltas;   // Curva para ADC-AX, Voltaje entre  -abc a abc, de 0 a 3.3V |
+
+    V_low_adc = vdc_ref*0.3;
+    V_high_adc = vdc_ref*0.95;
 
     AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //clear INT1 flag
     //
@@ -1470,9 +1772,8 @@ interrupt void adca1_isr2(void)
 //    PieCtrlRegs.PIEACK.all = PIEACK_GROUP10;
 //    PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
 //    PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
-    PieCtrlRegs.PIEACK.bit.ACK1 = 1; //(PIEACK_GROUP1 | PIEACK_GROUP11);
-
-
+//    PieCtrlRegs.PIEACK.bit.ACK1 = 1; //(PIEACK_GROUP1 | PIEACK_GROUP11);
+    PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);
 }
 
 //
@@ -1481,11 +1782,22 @@ interrupt void adca1_isr2(void)
 __interrupt void cla1Isr1 () // DCDC
 {
     AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //make sure INT1 flag is cleared
+
     if(1 == AdcaRegs.ADCINTOVF.bit.ADCINT1)
     {
         AdcaRegs.ADCINTOVFCLR.bit.ADCINT1 = 1; // limpia INT1 overflow flag
     }
-    PieCtrlRegs.PIEACK.bit.ACK11 = 1; // all = (PIEACK_GROUP1 | PIEACK_GROUP11);
+
+EALLOW;
+    Cla1Regs.MICLR.bit.INT1 = 1;
+    if (Cla1Regs.MIOVF.bit.INT1 == 1)
+    {
+        Cla1Regs.MICLROVF.bit.INT1 = 1;
+    }
+EDIS;
+    PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);      //permite que se generen nuevas interrupciones.
+
+
 
 ////----------------Control_DCDC---------------//
 ////-------------------------------------------//
@@ -1498,10 +1810,10 @@ __interrupt void cla1Isr1 () // DCDC
 //-------------------------------------------//
 //b1 = a1 + (float)CpuTimer1Regs.TIM;
 // contador de tiempo //
-//    ct2 = EPwm3Regs.TBCTR;
-//    delta_2 = ct2 - ct1;
-//    ct4 = CpuTimer1Regs.TIM.all;
-//    delta_3 = ct3 - ct4;
+    ct2 = EPwm3Regs.TBCTR;
+    delta_2 = ct2 - ct1;
+    ct4 = CpuTimer1Regs.TIM.all;
+    delta_3 = ct3 - ct4;
 // contador de tiempo //
 
 //---------Controlador-de-corriente----------//
@@ -1518,11 +1830,12 @@ __interrupt void cla1Isr1 () // DCDC
                 x_ant_v_l = x_ant_v_g;  // Guardado de variables controlador de voltaje
                 x_v_l     = x_v_g;      // Guardado de variables controlador de voltaje
 //                EPwm4Regs.CMPA.bit.CMPA = x_i_g[i_count_l]*PWM_TBPRD_dcdc;
-                EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
+//                EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
 /*                EPwm3Regs.CMPA.bit.CMPA = (1-0.47)*PWM_TBPRD_dcdc;*/
 //                EPwm3Regs.CMPB.bit.CMPB = contador_CMPB;
 //                EPwm3Regs.CMPB.bit.CMPB = 0.1*PWM_TBPRD_dcdc;
-//                EPwm3Regs.CMPA.bit.CMPA = (1-0.2)*PWM_TBPRD_dcdc;
+                EPwm3Regs.CMPA.bit.CMPA = (1-0.4)*PWM_TBPRD_dcdc;
+//                EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
             }
             break;
             case 1:
@@ -1552,13 +1865,13 @@ __interrupt void cla1Isr1 () // DCDC
 ////-------------------------------------------//
     contador_l = contador_g + 1.0/Fpwm_vf;
 
-    EPwm8Regs.CMPA.bit.CMPA  = duty_va*PWM_TBPRD_inversor;
-    EPwm11Regs.CMPA.bit.CMPA = duty_vb*PWM_TBPRD_inversor;
-    EPwm12Regs.CMPA.bit.CMPA = duty_vc*PWM_TBPRD_inversor;
+//    EPwm8Regs.CMPA.bit.CMPA  = duty_va*PWM_TBPRD_inversor;
+//    EPwm11Regs.CMPA.bit.CMPA = duty_vb*PWM_TBPRD_inversor;
+//    EPwm12Regs.CMPA.bit.CMPA = duty_vc*PWM_TBPRD_inversor;
 
-//    EPwm8Regs.CMPA.bit.CMPA  = 0.5*PWM_TBPRD_inversor;
-//    EPwm11Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
-//    EPwm12Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
+    EPwm8Regs.CMPA.bit.CMPA  = 0.5*PWM_TBPRD_inversor;
+    EPwm11Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
+    EPwm12Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
 
     if (contador_frecuencia < Fpwm_vf*t_inicio_rampa){
             frec_vf = f_min_vf;
@@ -1575,7 +1888,7 @@ __interrupt void cla1Isr1 () // DCDC
             voltaje_vf = (v_max_vf)*sqrt_2;
             contador_frecuencia = Fpwm_vf*(t_final_rampa) + 1;
         }
-        else{
+    else{
             frec_vf = f_min_vf;
             voltaje_vf = v_min_vf;
         }

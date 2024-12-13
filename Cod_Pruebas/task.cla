@@ -353,9 +353,9 @@ __interrupt void Cla1Task1 (void)
 
 
 //        resultado [0] = AdcaResultRegs.ADCRESULT0;
-        resultado [0] = V_low;
-        resultado [1] = V_high;
-        resultado [2] = i_ref;
+//        resultado [0] = V_low;
+//        resultado [1] = V_high;
+//        resultado [2] = i_ref;
         resultado [3] = x_i_g[0]*1000;;
         resultado [4] = V_high;
         resultado [5] = u_v;
@@ -372,6 +372,9 @@ __interrupt void Cla1Task1 (void)
         resultado [5] = x_i_g[0]*1000;  //Ciclo de trabajo
         resultado [6] = V_low;  //V_low_valor
         resultado [7] = V_high;  //V_high_valor
+
+
+
 
 //        resultado [4] = V_high;
 //        resultado [5] = Imax_bound;
