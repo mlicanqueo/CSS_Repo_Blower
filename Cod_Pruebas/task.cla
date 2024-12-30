@@ -28,14 +28,13 @@ __interrupt void Cla1Task1 (void)
 
     V_low  =  ((float)(AdcaResultRegs.ADCRESULT2))*m_vdc+n_vdc;    // Curva para ADC-A0, Voltaje entre   0-1000V,  de 0 a 3.3V |
     V_high =  ((float)(AdcaResultRegs.ADCRESULT1))*m_vdc+n_vdc;    // Curva para ADC-A1, Voltaje entre   0-1000V,  de 0 a 3.3V |
-//    Imax[0] = AdcaResultRegs.ADCRESULT2*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
-    Imax[1] = AdcaResultRegs.ADCRESULT3*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
-    Imax[2] = AdcaResultRegs.ADCRESULT4*m_i_2/N_vueltas   + n_i_2/N_vueltas;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    Imax[0] = ((float)(AdcaResultRegs.ADCRESULT0))*m_i_2/N_vueltas + n_i_2/N_vueltas;
+    Imax[1] = ((float)(AdcaResultRegs.ADCRESULT3))*m_i_2/N_vueltas + n_i_2/N_vueltas;   // Curva para ADC-A, Voltaje entre  -abc a abc, de 0 a 3.3V |
+    Imax[2] = ((float)(AdcaResultRegs.ADCRESULT4))*m_i_2/N_vueltas + n_i_2/N_vueltas;   // Curva para ADC-A, Voltaje entre  -abc a abc, de 0 a 3.3V |
 
     //    il[0] = ((((AdcaResultRegs.ADCRESULT2)+(AdcaResultRegs.ADCRESULT3)+(AdcaResultRegs.ADCRESULT4))/3)*m_i   - n_i)/20.0;   // Curva para ADC-A2, Voltaje entre  -abc a abc, de 0 a 3.3V |
 //    promedio = (AdcaResultRegs.ADCRESULT2 + AdcaResultRegs.ADCRESULT3 + AdcaResultRegs.ADCRESULT4)/3.0;
 //    Imax[0] = promedio*m_i_2/N_vueltas + n_i_2/N_vueltas;
-    Imax[0] = ((float)(AdcaResultRegs.ADCRESULT0))*m_i_2/N_vueltas + n_i_2/N_vueltas;
 
 
 ////    vg_a = ((float)(AdcaResultRegs.ADCRESULT1)*m_vg   + n_vg);   // Curva para ADC-A1, Voltaje entre -+350V,     de 0 a 3.3V | RTBox Pin AO13
@@ -210,7 +209,6 @@ __interrupt void Cla1Task1 (void)
         Imax_ref_dcm = (a/3.0)*(1 - 2.0*CLAsin ( CLAasin(delta) / 3.0));
     }
 
-
 ////////////////////////////////////////////////////
 // Calculo corriente máxima de frontera
 ////////////////////////////////////////////////////
@@ -279,6 +277,7 @@ __interrupt void Cla1Task1 (void)
 ////-------------------------------------------//
 //
 
+
 //-------------------------------------------//
 //--------------Control_Inversor-------------//
 
@@ -337,7 +336,6 @@ __interrupt void Cla1Task1 (void)
                 v_minmax_max = vc;
             }
         }
-
         v_minmax = 0.5*(v_minmax_min + v_minmax_max);
 
         duty_va = (va-v_minmax)/(V_high / 2.0);

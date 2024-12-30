@@ -16,6 +16,11 @@
 //#include "F2837xD_Cla_defines.h"
 #include <CLAmath.h>
 #include <math.h>
+
+#include "Funciones_prueba.h"
+
+
+
 //
 // Defines
 //
@@ -113,6 +118,8 @@ int16 CMPA_Boost_c;     //CMPA Boost pierna c
 // inversor
 //float contador_frecuencia;
 long contador_frecuencia;
+uint16_t contador_frecuencia_2   = 0;
+
 //long contador_apagado, contador_apagado2;
 float m_frec;
 float m_volt;
@@ -127,8 +134,8 @@ float n_volt;
 #define Inversor_phase3 (PWM_TBPRD_inversor/3.0)*0.0
 // El desfase se realiza por codigo, no modificar.
 //----------------------------------------------//
-#define t_inicio_rampa 5.0
-#define t_final_rampa 20.0
+#define t_inicio_rampa 0.0
+#define t_final_rampa 10.0
 
 //#define t_inicio_rampa 0.12
 //#define t_final_rampa  0.20
@@ -297,7 +304,7 @@ void CLA_configClaMemory(void);
 void configCLAMemory2(void);
 void CLA_initCpu1Cla1(void);
 void EPWM_initEpwm(void);
-void ADC_initAdcABCD(void);
+//void ADC_initAdcABCD(void);
 void SetupADCEpwm2(void);
 void SetupSOC(Uint16 soc, Uint16 channel, Uint16 acqps, Uint16 trigsel);
 
@@ -570,14 +577,10 @@ EDIS;
     frec_vf = f_min_vf;
     voltaje_vf = v_min_vf;
     contador_frecuencia = 0.0;
-    m_frec = (f_max_vf - f_min_vf) / (Fpwm_vf*(t_final_rampa-t_inicio_rampa));
-    m_volt = (v_max_vf - v_min_vf) / (Fpwm_vf*(t_final_rampa-t_inicio_rampa));
-    n_frec = (f_max_vf-t_final_rampa*Fpwm_vf*m_frec);
-    n_volt = (v_max_vf-t_final_rampa*Fpwm_vf*m_volt);
-
-
-//    contador_apagado = 0;
-//    contador_apagado2 = 0;
+    m_frec = (f_max_vf - f_min_vf) / ((t_final_rampa-t_inicio_rampa));
+    m_volt = (v_max_vf - v_min_vf) / ((t_final_rampa-t_inicio_rampa));
+    n_frec = (f_max_vf-t_final_rampa*m_frec);
+    n_volt = (v_max_vf-t_final_rampa*m_volt);
 
 //------------------------------------------//
 //
@@ -622,7 +625,8 @@ EDIS;
     InitCpuTimers();                           // Inicializa los temporizadores
 //    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Configura el temporizador a 5 segundos (5,000,000 µs)
 
-    ConfigCpuTimer(&CpuTimer0, 200, 5000000);  // Temporizador de 1 segundos
+    ConfigCpuTimer(&CpuTimer0, 200, 3000000);  // Temporizador0 de 3 segundos
+    ConfigCpuTimer(&CpuTimer1, 200, 1000000);  // Temporizador1 de 1 segundo
 
 
 //Condiciones iniciales
@@ -1164,38 +1168,38 @@ while(1)
 //
 // ADC_initAdc - Initialize ADC A,B,C,D configurations and power it up
 //
-void ADC_initAdcABCD(void)
-{
-    EALLOW;
-    // encender adca
-    AdcaRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
-    AdcSetMode(ADC_ADCA, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
-    AdcaRegs.ADCCTL1.bit.INTPULSEPOS = 1; // Interrupción se genera al final de la conversión
-    AdcaRegs.ADCCTL1.bit.ADCPWDNZ = 1;    // Enciende el circuito análogo del ADC
-    //
-    // encender adcB
-    //
-    AdcbRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
-    AdcSetMode(ADC_ADCB, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
-    AdcbRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
-    //
-    // encender adcC
-    //
-    AdccRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
-    AdcSetMode(ADC_ADCC, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
-    AdccRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
-    //
-    // encender adcD
-    //
-    AdcdRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
-    AdcSetMode(ADC_ADCD, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
-    AdcdRegs.ADCCTL1.bit.INTPULSEPOS = 1; // Interrupción se genera al final de la conversión
-    AdcdRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
-
-    //delay for > 1ms to allow ADC time to power up
-    DELAY_US(1000);
-    EDIS;
-}
+//void ADC_initAdcABCD(void)
+//{
+//    EALLOW;
+//    // encender adca
+//    AdcaRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
+//    AdcSetMode(ADC_ADCA, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+//    AdcaRegs.ADCCTL1.bit.INTPULSEPOS = 1; // Interrupción se genera al final de la conversión
+//    AdcaRegs.ADCCTL1.bit.ADCPWDNZ = 1;    // Enciende el circuito análogo del ADC
+//    //
+//    // encender adcB
+//    //
+//    AdcbRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
+//    AdcSetMode(ADC_ADCB, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+//    AdcbRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
+//    //
+//    // encender adcC
+//    //
+//    AdccRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
+//    AdcSetMode(ADC_ADCC, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+//    AdccRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
+//    //
+//    // encender adcD
+//    //
+//    AdcdRegs.ADCCTL2.bit.PRESCALE = 6; //set ADCCLK divider to /4
+//    AdcSetMode(ADC_ADCD, ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+//    AdcdRegs.ADCCTL1.bit.INTPULSEPOS = 1; // Interrupción se genera al final de la conversión
+//    AdcdRegs.ADCCTL1.bit.ADCPWDNZ = 1; // Enciende el circuito análogo del ADC
+//
+//    //delay for > 1ms to allow ADC time to power up
+//    DELAY_US(1000);
+//    EDIS;
+//}
 //
 // PWM1A y PWM1B se utilizan de forma interna para hacer trigger al adc
 // PWM2A y PWM2B se utilizan de forma Externa, salidas hacia boost converter
@@ -1797,8 +1801,6 @@ EALLOW;
 EDIS;
     PieCtrlRegs.PIEACK.all = (PIEACK_GROUP1 | PIEACK_GROUP11);      //permite que se generen nuevas interrupciones.
 
-
-
 ////----------------Control_DCDC---------------//
 ////-------------------------------------------//
 //----------Controlador-de-voltaje-----------//
@@ -1824,16 +1826,8 @@ EDIS;
         {
             case 0:
             {
-//                EPwm3Regs.CMPA.bit.CMPA = 0.5*(PWM_TBPRD_dcdc/1.0);
-//                EPwm4Regs.CMPA.bit.CMPA = 0.5*(PWM_TBPRD_dcdc/1.0);
-//                EPwm7Regs.CMPA.bit.CMPA = 0.5*(PWM_TBPRD_dcdc/1.0);
                 x_ant_v_l = x_ant_v_g;  // Guardado de variables controlador de voltaje
                 x_v_l     = x_v_g;      // Guardado de variables controlador de voltaje
-//                EPwm4Regs.CMPA.bit.CMPA = x_i_g[i_count_l]*PWM_TBPRD_dcdc;
-//                EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
-/*                EPwm3Regs.CMPA.bit.CMPA = (1-0.47)*PWM_TBPRD_dcdc;*/
-//                EPwm3Regs.CMPB.bit.CMPB = contador_CMPB;
-//                EPwm3Regs.CMPB.bit.CMPB = 0.1*PWM_TBPRD_dcdc;
                 EPwm3Regs.CMPA.bit.CMPA = (1-0.4)*PWM_TBPRD_dcdc;
 //                EPwm3Regs.CMPA.bit.CMPA = (1-x_i_g[i_count_l])*PWM_TBPRD_dcdc;
             }
@@ -1861,6 +1855,8 @@ EDIS;
 //        i_count_l = 0;
 //    }
 //    int i;
+////----------------Control_DCDC---------------//
+////-------------------------------------------//
 ////--------------Control_Inversor-------------//
 ////-------------------------------------------//
     contador_l = contador_g + 1.0/Fpwm_vf;
@@ -1873,30 +1869,55 @@ EDIS;
     EPwm11Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
     EPwm12Regs.CMPA.bit.CMPA = 0.5*PWM_TBPRD_inversor;
 
-    if (contador_frecuencia < Fpwm_vf*t_inicio_rampa){
-            frec_vf = f_min_vf;
-            voltaje_vf = v_min_vf*sqrt_2;
-            contador_frecuencia = contador_frecuencia + 1;
+
+// Solo se ejecuta cuando esta en estado DCDC+INV
+if (estado == dcdc_inversor){
+
+////------------------------------------------------//
+////-------------Contador_para_curva_VF-------------//
+    if (CpuTimer1Regs.TCR.bit.TSS == 1) // timer en 0.
+    {
+        CpuTimer1Regs.TCR.bit.TSS = 0;             // Inicia el temporizador
+    }
+    else if (CpuTimer1Regs.TCR.bit.TIF == 1) // timer está en Xseg.
+    {
+        CpuTimer1Regs.TCR.bit.TIF = 1;     // Limpia la bandera del temporizador
+        CpuTimer1Regs.TCR.bit.TSS = 1;    // Detén el temporizador si no necesitas reutilizarlo
+        contador_frecuencia_2 = contador_frecuencia_2 + 1;
+    }
+////-------------Contador_para_curva_VF-------------//
+////------------------------------------------------//
+
+////------------------------------------------------//
+////-----------------Rampa_VF-----------------------//
+    if (contador_frecuencia_2 < t_final_rampa){
+        frec_vf     = contador_frecuencia_2 * m_frec + n_frec;
+        voltaje_vf  = (contador_frecuencia_2 * m_volt + n_volt)*sqrt_2;
         }
-        else if (contador_frecuencia < Fpwm_vf*(t_final_rampa)){
-            frec_vf     = contador_frecuencia * m_frec + n_frec;
-            voltaje_vf  = (contador_frecuencia * m_volt + n_volt)*sqrt_2;
-            contador_frecuencia = contador_frecuencia + 1;
-        }
-        else if (contador_frecuencia > Fpwm_vf*(t_final_rampa)-1){
-            frec_vf = f_max_vf;
-            voltaje_vf = (v_max_vf)*sqrt_2;
-            contador_frecuencia = Fpwm_vf*(t_final_rampa) + 1;
+    else if (contador_frecuencia_2 >= t_final_rampa){
+        frec_vf = f_max_vf;
+        voltaje_vf = (v_max_vf)*sqrt_2;
+        CpuTimer1Regs.TCR.bit.TSS = 1;  // Pausa el timer, para evitar overflow en el registro.
         }
     else{
             frec_vf = f_min_vf;
             voltaje_vf = v_min_vf;
+            CpuTimer1Regs.TCR.bit.TSS = 1;  // Pausa el timer, para evitar overflow en el registro.
         }
-
-////----------------Control_DCDC---------------//
-////-------------------------------------------//
+////-----------------Rampa_VF-----------------------//
+////------------------------------------------------//
+    }
+    else{
+        contador_frecuencia_2 = 0;
+    }
 ////--------------Control_Inversor-------------//
 ////-------------------------------------------//
+
+
+
+
+
+
 
 
 }

@@ -136,7 +136,7 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="ACDC_drive_test_dcdc_Inversor_20nov.c|ACDC_drive_test_dcdc.c|f2837x_cla_c_lnk - copia.cmd|sci_prueba.c|SCI_GPT.c|ACDC_drive.c|ACDC_drive_test.c|ACDC_drive_test_2.c|main.c|cla_adc_fir32_cpu01.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="ACDC_drive_test_dcdc.c|f2837x_cla_c_lnk - copia.cmd|sci_prueba.c|SCI_GPT.c|ACDC_drive.c|ACDC_drive_test.c|ACDC_drive_test_2.c|main.c|cla_adc_fir32_cpu01.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
